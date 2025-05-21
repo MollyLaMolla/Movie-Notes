@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <%- include('partials/text_font.ejs') %>
+    <link rel="stylesheet" href="style/style.css">
+    <title>Movie Notes</title>
+</head>
+<body>
+    
+    <div class="new movie">
+        <a href="/new" class="new-movie">
+            <button>New Movie</button>
+        </a>
+    </div>
+<% if (user.username === "user") { %>
+    <div id="login">
+        <a href="/login" class="login">
+            <button>Login</button>
+        </a>
+    </div>
+
+    <div id="signup">
+        <a href="/signup" class="signup">
+            <button>Sign Up</button>
+        </a>
+    </div>
+<% } %>
+
+<% if (user.username !== "user") { %>
+    <div id="logout">
+        <form action="/logout" method="POST">
+            <button type="submit" class="logout">Logout</button>
+        </form>
+    </div>
+<% } %>
+        
+<% if (user) { %>
+    <% if (user.role === "admin") { %>
+        <div class="status-admin status">
+            <p>Modifiche permanenti ✅</p>
+        </div>
+    <% } else { %>
+        <div class="status-user status">
+            <p>Modifiche temporanee ⏳</p>
+        </div>
+    <% } %>
+<% } %>
+
+    <div class="movies-container">
+        <div class="movies'filter">
+            <form action="/" method="GET" class="filter-form">
+                <select name="type" class="type-select">
+                    <option value="all">All</option>
+                    <option value="movie" <% if (filter.type === "movie") { %> selected <% } %>>Movie</option>
+                    <option value="tv" <% if (filter.type === "tv") { %> selected <% } %>>TV</option>
+                </select>
+                <select name="movieGenres" class="movie-genre-select no-display">
+                    <option value="all">All</option>
+                    <% genres.movieGenress.forEach(genre => { %>
+                        <option value="<%= genre %>" <% if (filter.movieGenres === genre) { %> selected <% } %>><%= genre %></option>
+                    <% }) %>
+                </select>
+                <select name="tvGenres" class="tv-genre-select no-display">
+                    <option value="all">All</option>
+                    <% genres.tvGenress.forEach(genre => { %>
+                        <option value="<%= genre %>" <% if (filter.tvGenres === genre) { %> selected <% } %>><%= genre %></option>
+                    <% }) %>
+                </select>
+                <select name="whatchingStatus" class="whatching-status-select">
+                    <option value="all" <% if (filter.whatchingStatus === "all") { %> selected <% } %>>All</option>
+                    <option value="Completed" <% if (filter.whatchingStatus === "Completed") { %> selected <% } %>>Completed</option>
+                    <option value="Watching" <% if (filter.whatchingStatus === "Watching") { %> selected <% } %>>Watching</option>
+                    <option value="On Hold" <% if (filter.whatchingStatus === "On Hold") { %> selected <% } %>>On Hold</option>
+                    <option value="Dropped" <% if (filter.whatchingStatus === "Dropped") { %> selected <% } %>>Dropped</option>
+                    <option value="Plan to Watch" <% if (filter.whatchingStatus === "Plan to Watch") { %> selected <% } %>>Plan to Watch</option>
+                </select>
+                <select name="sort" class="sort-select">
+                    <option value="title" <% if (sort.sort === "title") { %> selected <% } %>>Title</option>
+                    <option value="popularity" <% if (sort.sort === "popularity") { %> selected <% } %>>Popularity</option>
+                    <option value="rating" <% if (sort.sort === "rating") { %> selected <% } %>>Rating</option>
+                    <option value="time_created" <% if (sort.sort === "time_created" || sort.sort === undefined) { %> selected <% } %>>Time Created</option>
+                    <option value="time_updated" <% if (sort.sort === "time_updated") { %> selected <% } %>>Time Updated</option>
+                    <option value="personal_vote" <% if (sort.sort === "personal_vote") { %> selected <% } %>>Personal Vote</option>
+                    <option value="release_date" <% if (sort.sort === "release_date") { %> selected <% } %>>Release Date</option>
+                </select>
+                <select name="order" class="order-select">
+                    <option value="asc" <% if (sort.order === "asc") { %> selected <% } %>>Ascending</option>
+                    <option value="desc" <% if (sort.order === "desc") { %> selected <% } %>>Descending</option>
+                </select>
+                <button type="submit" class="filter-button">Filter</button>
+            </form>
+        </div>
+        <% if (locals.movies) { %>
+            <% movies.forEach(movie => {
+                const { id, movie_id, movie_title, movie_poster, movie_backdrop, movie_type, movie_genre, movie_release_date, movie_original_language, movie_overview, movie_vote, movie_vote_count, movie_watching_status, movie_personal_vote, movie_personal_overview, movie_time_created, movie_time_updated, movie_permanent } = movie;
+                const image = movie_poster || movie_backdrop;
+                const title = movie_title || "Unknown Title";
+                %>
+                <div class="movie-card <% if(movie.movie_permanent === "NO") { %> temporary <% } %>">
+                    <a href="/movie/<%= id %>" class="movie-link">
+                        <img class="movie-image" src="<%= image %>" alt="<%= title %>">
+                        <h2 class="movie-title"><%= title %></h2>
+                        <h2><%=id%></h2>
+
+                        <button class="edit-movie">
+                            <a href="/edit/<%= id %>" class="edit-link">Edit</a>
+                        </button>
+                        <form action="/movie/<%= id %>/delete" method="POST" class="delete-form">
+                            <button type="submit" class="delete-movie">Delete</button>
+                        </form>
+                    </a>
+                </div>
+            <%  }); %>
+        <% } else { %>
+            <p class="no-movies">No movies found.</p>
+        <% } %>
+    </div>
+
+    <% if (locals.success) { %>
+        <div class="success-container">
+            <p id="success-message" class="success-message"><%= success %></p>
+        </div>
+    <% } %>
+
+    <% if (locals.error) { %>
+        <div class="error-container">
+            <p id="error-message" class="error-message"><%= error %></p>
+        </div>
+    <% } %>
+
+    <script src="/function/index.js"></script>
+    <script src="/function/messages.js"></script>
+</body>
+</html>

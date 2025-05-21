@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <%- include('partials/text_font.ejs') %>
+    <link rel="stylesheet" href="/style/style.css">
+    <title>Movie Note</title>
+</head>
+<body>
+    <% 
+    console.log(movie) 
+    const { id, movie_id, movie_title, movie_poster, movie_backdrop, movie_type, movie_genre, movie_release_date, movie_original_language, movie_overview, movie_vote, movie_vote_count, movie_watching_status, movie_personal_vote, movie_personal_overview, movie_time_created, movie_time_updated } = movie;
+    const title = movie_title;
+    const image = movie_poster || movie_backdrop;
+    const type = movie_type;
+    const genre = movie_genre;
+    const release_date = movie_release_date;
+    const original_language = movie_original_language;
+    const overview = movie_overview;
+    const vote = movie_vote;
+    const vote_count = movie_vote_count;
+    const watching_status = movie_watching_status;
+    const personal_vote = movie_personal_vote;
+    const personal_overview = movie_personal_overview;
+    const time_created = movie_time_created;
+    const time_updated = movie_time_updated;
+    %>
+
+    <div class="movie-container">
+        <div class="movie-header">
+            <img class="movie-big-image selected-img" src="<%= image %>" alt="<%= title %>">
+            <h1 class="selected-title"><%= title %></h1>
+            <h2>Type: <span id="selected-movie-type"><%= type %></span></h2>
+            <h2>Genre: <span id="selected-movie-genre"><%= genre %></span></h2>
+            <h2>Release Date: <span id="selected-movie-release-date"><%= release_date %></span></h2>
+            <h2>Original Language: <span id="selected-movie-original-language"><%= original_language %></span></h2>
+            <h2 id="selected-movie-vote">
+                Vote: 
+                <span id="vote-avg-num"><%= vote %></span>
+                <span id="vote-avg">/10</span>
+                <span id="stars"><span id="full-stars"></span><span id="half-stars"></span><span id="empty-stars"></span></span>
+                <span id="vote-count"><%= vote_count %></span>
+            </h2>
+        </div>
+
+        <div class="movie-overview">
+            <h2>Overview:</h2>
+            <p id="selected-movie-overview"><%= overview %></p>
+        </div>
+
+        <% if (watching_status === 'Completed') { %>
+            <p><%= watching_status %></p>
+            <p><%= personal_vote %></p>
+            <p><%= personal_overview %></p>
+        <% } %>
+    </div>
+
+
+
+    <script src="/function/function.js"></script>
+</body>
+</html>

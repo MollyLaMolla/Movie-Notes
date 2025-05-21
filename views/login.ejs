@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <%- include('partials/text_font.ejs') %>
+    <link rel="stylesheet" href="style/style.css">
+    <title>Movie Note</title>
+</head>
+<body>
+
+    <div>
+        <h1>Login</h1>
+        <form action="/login" method="POST">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required autocomplete="off" onchange="this.value = this.value.trim()">
+            <br>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required autocomplete="off" onchange="this.value = this.value.trim()">
+            <br>
+            <button type="submit">Login</button>
+        </form>
+    </div>
+
+    <% if (typeof error !== "undefined" && error) { %>
+        <div class="error-container">
+            <p id="error-message"><%= error %></p>
+        </div>
+    <% } %>
+
+    <script src="/function/messages.js"></script>
+</body>
+</html>

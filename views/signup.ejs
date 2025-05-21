@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <%- include('partials/text_font.ejs') %>
+    <link rel="stylesheet" href="style/style.css">
+    <title>Movie Note</title>
+</head>
+<body>
+    <div>
+        <h1>Sign Up</h1>
+        <form action="/signup" method="POST">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" title="can only contain letters, numbers, and underscores" autocomplete="off" onchange="this.value = this.value.trim()" pattern="^[a-zA-Z0-9_]+$" required>
+            <br>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password"autocomplete="off">
+            <br>
+            <label for="confirm-password">Confirm Password:</label>
+            <input type="password" id="confirm-password" name="confirmPassword" autocomplete="off">
+            <br>
+            <button type="submit">Sign Up</button>
+        </form>
+    </div>
+
+    <% if (locals.error) { %>
+        <div class="error-container">
+            <p id="error-message" class="error-message"><%= error %></p>
+        </div>
+    <% } %>
+
+    <script>
+    function check(input) {
+        if (input.id === "confirm-password") {
+            const password = document.getElementById("password").value;
+            if (input.value !== password) {
+                input.setCustomValidity("Passwords do not match");
+            } else {
+                input.setCustomValidity("");
+            }
+        }
+    }
+</script>
+<script src="/function/messages.js"></script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+.no-display{
+    display: none;
+}
+
+*{
+    font-family: "Roboto", sans-serif;
+    color: #fff;
+}
+
+body{
+    background-color: #111318;
+}
+
+#full-stars polygon{
+    fill: gold !important;
+}
+
+#half-stars path{
+    fill: gold !important;
+}
+
+#empty-stars svg{
+    fill: gold !important;
+}
+
+#stars svg{
+    height: 24px;
+    width: 24px;
+}
+
+#stars{
+    gap: 0;
+}
+
+#error-message {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    width: 90%;
+    max-width: 400px;
+    color: #fff;
+    background: #d9534f;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    text-align: center;
+    transition: opacity 0.5s ease-in-out;
+}
+
+#success-message {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    width: 90%;
+    max-width: 400px;
+    color: #fff;
+    background: #5cb85c;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    text-align: center;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.temporary img{
+    opacity: 50%;
+}
+
+.status{
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    z-index: 1000;
+    width: fit-content;
+    
+    color: white;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: bold;
+    margin: 8px;
+}
+
+.status-admin{
+    background-color: #81b85c98;
+    font-weight: 200;
+    font-size: 1rem;
+}
+
+.status-user{
+    background-color: #b8aa5c98;
+    font-weight: 200;
+    font-size: 1rem;
+}
+
+.status p{
+    margin: 12px;
+}
+

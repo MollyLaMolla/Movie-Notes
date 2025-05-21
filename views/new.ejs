@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <%- include('partials/text_font.ejs') %>
+    <link rel="stylesheet" href="style/style.css">
+    <title>Movie Notes</title>
+</head>
+<body>
+    <div class="search">
+        <input type="search" name="search" id="searchInput" placeholder="Search for a movie..." autocomplete="off" onchange="this.value = this.value.trim()">
+        <div id="searchSuggestions" class="search-suggestions">
+            <ul id="suggestionsList"></ul>
+        </div>
+    </div>
+
+    <div class="no-display" id="movie-selected">
+        <img class="movie-small-image selected-img" src="" alt="">
+        <p class="movie-small-title selected-title"></p>
+    </div>
+
+    <div id="movie-data" class="no-display">
+        <div id="movie-data-header">
+            <div id="left-header">
+                <img class="movie-big-image selected-img" src="" alt="">
+            </div>
+            <div id="right-header">
+                <h1 class="selected-title"></h1>
+                <h2>Type: <span id="selected-movie-type"></span></h2>
+                <h2>Genre: <span id="selected-movie-genre"></span></h2>
+                <h2>Release Date: <span id="selected-movie-release-date"></span></h2>
+                <h2>Original Language: <span id="selected-movie-original-language"></span></h2>
+                <h2 id="selected-movie-vote">
+                    Vote: 
+                    <span id="vote-avg-num"></span>
+                    <span id="vote-avg">/10</span>
+                    <span id="stars"><span id="full-stars"></span><span id="half-stars"></span><span id="empty-stars"></span></span>
+                    <span id="vote-count"></span>
+                </h2>
+            </div>
+        </div>
+        <div id="movie-data-overview">
+            <h2>Overview:</h2>
+            <p id="selected-movie-overview"></p>
+        </div>
+    </div>
+
+    <div class="watch no-display">
+        <div class="completed">
+            <input type="radio" id="completed" name="watching-status" value="Completed">
+            <label for="completed">Completed</label>
+        </div>
+        <div class="whatching">
+            <input type="radio" id="whatching" name="watching-status" value="Watching">
+            <label for="whatching">Watching</label>
+        </div>
+        <div class="future-watch">
+            <input type="radio" id="future-watch" name="watching-status" value="Plan to Watch">
+            <label for="future-watch">Would like to Watch</label>
+        </div>
+        <div class="on-hold">
+            <input type="radio" id="on-hold" name="watching-status" value="On Hold">
+            <label for="on-hold">On Hold</label>
+        </div>
+        <div class="dropped">
+            <input type="radio" id="dropped" name="watching-status" value="Dropped">
+            <label for="dropped">Dropped</label>
+        </div>
+    </div>
+
+    <div class="movie-personal-overview no-display">
+        <div class="personal-vote-container">
+            <h2>Your vote:</h2>
+            <p id="personal-vote-text">Rate the movie from 0 to 10</p>
+            <p id="personal-vote-text-3">You can use decimals (e.g. 7.5)</p>
+            <input type="number" id="personal-vote" name="personal-vote" min="0" max="10" step="0.1" value="0" required>
+        </div>
+        <div class="personal-overview-container">
+            <h2>Your overview:</h2>
+            <textarea id="personal-overview" name="personal-overview" rows="4" cols="50"></textarea>
+        </div>
+    </div>
+
+    <div class="form-container no-display">
+        <form id="movie-form" action="/new" method="POST">
+            <input type="hidden" id="movie-id" name="movieId" value="">
+            <input type="hidden" id="movie-title" name="movieTitle" value="">
+            <input type="hidden" id="movie-backdrop" name="movieBackdrop" value="">
+            <input type="hidden" id="movie-type" name="movieType" value="">
+            <input type="hidden" id="movie-genre" name="movieGenre" value="">
+            <input type="hidden" id="movie-release-date" name="movieReleaseDate" value="">
+            <input type="hidden" id="movie-original-language" name="movieOriginalLanguage" value="">
+            <input type="hidden" id="movie-overview" name="movieOverview" value="">
+            <input type="hidden" id="movie-vote-avg" name="movieVote" value="">
+            <input type="hidden" id="movie-vote-count" name="movieVoteCount" value="">
+            <input type="hidden" id="movie-watching-status" name="movieWatchingStatus" value="">
+            <input type="hidden" id="movie-personal-vote" name="moviePersonalVote" value="">
+            <input type="hidden" id="movie-personal-overview" name="moviePersonalOverview" value="">
+        </form>
+    </div>
+    <div class="button-container no-display">
+        <button id="submit-button">Submit</button>
+    </div>
+
+    <% if (locals.error) { %>
+        <div class="error-container">
+            <p id="error-message" class="error-message"><%= error %></p>
+        </div>
+    <% } %>
+
+    <script type="module" src="/function/search.js"></script>
+    <script src="/function/newMovie.js"></script>
+    <script src="/function/messages.js"></script>
+</body>
+</html>
