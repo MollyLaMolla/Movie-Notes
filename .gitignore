@@ -6,4 +6,5 @@ coverage
 .DS_Store
 *.log
 backup_db.dump
+*.env
 data.sql
