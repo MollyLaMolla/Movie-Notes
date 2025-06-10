@@ -87,8 +87,8 @@ function checkInput(){
     console.log(encodeURIComponent(query));
     if (query.length > 2) {  // Evita richieste per stringhe troppo corte
         loader.style.display = "flex"; // Mostra il loader
-        testarray(query).then((data) => {
-        // getMovieDataTheMovieDb(query).then((data) => {
+        // testarray(query).then((data) => {
+        getMovieDataTheMovieDb(query).then((data) => {
             setTimeout(() => {
             loader.style.display = "none"; // Nascondi il loader quando arrivano i dati
             if (!data || data.length === 0) {
