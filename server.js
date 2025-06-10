@@ -3,14 +3,21 @@ import express from "express";
 import db from "./db.js";
 import authRoutes from "./auth.js";
 import path from "path";
-import { fileURLToPath } from "url";
 import cron from "node-cron";
 import axios from "axios";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
+import livereload from "livereload";
+import connectLivereload from "connect-livereload";
 
+
+const __dirname = path.resolve();
+const liveReloadServer = livereload.createServer();
+liveReloadServer.watch([path.join(__dirname, "public"), path.join(__dirname, "views")]);
 const app = express();
 const port = 3000;
+
+app.use(connectLivereload());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static("public"));
@@ -18,8 +25,21 @@ app.set("view engine", "ejs");
 app.set("views", "views");
 app.use("/auth", authRoutes);
 app.use(cookieParser());
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+
+app.use((req, res, next) => {
+    res.locals.user = req.user || null; // Se `req.user` non esiste, assegna `null`
+    console.log("Middleware: Utente autenticato:", res.locals.user);
+    // Aggiungi il token ai cookie se non esiste
+    if (!req.cookies.token) {
+        const token = jwt.sign({ username: "user", role: "user" }, process.env.JWT_SECRET, { expiresIn: "1h" });
+        res.cookie("token", token, { httpOnly: true, maxAge: 3600000 });
+        console.log("Token aggiunto ai cookie:", token);
+    }
+    next();
+});
+
+
+
 axios.defaults.baseURL = `http://localhost:${port}`;
 
 
@@ -197,17 +217,41 @@ app.use((req, res, next) => {
     next();
 });
 
+app.get("/", (req, res) => {
+    res.redirect("/movies/1");
+});
+
+
 // Home page
-app.get("/", async (req, res) => {
+app.get("/movies/:page", async (req, res) => {
+    const search = req.query.search || "";
+    console.log("Query params:", req.query);
+    console.log("Search query:", search);
+    // se search non è vuoto, cerca i film
+    const { error, success, totalPages } = req.cookies;
+    console.log("Cookies:", req.cookies);
+    const page = req.params.page || 1;
+    const { type, movieGenres, tvGenres, whatchingStatus, sort, order } = req.query;
+    console.log(type, movieGenres, tvGenres, whatchingStatus, sort, order);
     console.log(req.query);
-    const { error, success } = req.cookies;
+    console.log("Page:", page);
+    console.log(`page è un numero: ${isNaN(page) || page <= 0 ? "No" : "Yes"}`);
+    // modifica l'header della pagina se page non è un numero
+    if (isNaN(page) || page < 0) {
+        res.cookie("error", "Pagina non valida, reindirizzamento alla pagina 1", { maxAge: 5000, httpOnly: false });
+        return res.redirect(`/movies/1?type=${type || "all"}&movieGenres=${movieGenres || "all"}&tvGenres=${tvGenres || "all"}&whatchingStatus=${whatchingStatus || "all"}&sort=${sort || "time_updated"}&order=${order || "asc"}`);
+    }
     if (error) {
         res.clearCookie("error");
     }
     if (success) {
         res.clearCookie("success");
     }
-    const { type, movieGenres, tvGenres, whatchingStatus, sort, order } = req.query;
+    if (totalPages) {
+        res.clearCookie("totalPages");
+    }
+    
+    console.log("Query params:", req.query);
     try {
         let token = req.cookies.token;
         // Se non c'è token, genera token base
@@ -227,34 +271,49 @@ app.get("/", async (req, res) => {
             console.log("Utente autenticato:", res.locals.user);
         }
         const moviesResponse = await getAllMovies();
+        const moviesForSearch = moviesResponse.map((movie) => ({
+            movie_id: movie.id,
+            movie_title: movie.movie_title,
+            movie_poster: movie.movie_backdrop || movie.movie_poster || "/images/placeholder-image.png",
+        }));
         const { movieGenress, tvGenress } = await getAllGenres();
-        const filteredMovies = await filterMovies(moviesResponse, type, movieGenres, tvGenres, whatchingStatus, sort, order);
-        console.log("Movie genres:", movieGenress);
-        console.log("TV genres:", tvGenress);
+        const filteredMovies = await filterMovies(moviesResponse, type || "all", movieGenres || "all", tvGenres || "all", whatchingStatus || "all", sort || "time_updated", order || "asc", search);
         if (moviesResponse.error) {
             return res.render("index.ejs", {
                 error: "Errore nel recupero dei film",
             });
         }
-        if (filteredMovies === undefined) {
+        const cardsPerPage = 11; // Numero di film per pagina
+        // aggiungi il numero totale di pagine ai cookie
+        const totalPages = Math.ceil(filteredMovies.length / cardsPerPage);
+        if (page > totalPages) {
+            console.log("Page is greater than total pages, redirecting to last page");
+            return res.redirect(`/movies/${totalPages}?type=${type || "all"}&movieGenres=${movieGenres || "all"}&tvGenres=${tvGenres || "all"}&whatchingStatus=${whatchingStatus || "all"}&sort=${sort || "time_updated"}&order=${order || "asc"}`);
+        }
+        console.log(`Total pages: ${totalPages}`);
+        console.log(`page: ${page}`);
+        console.log(`is page 0: ${page == 0}`);
+        console.log(`is total pages > 0: ${totalPages > 0}`);
+        // Se la pagina è 0 e il numero totale di pagine è maggiore non è 0, reindirizza alla pagina 1
+        const isPageZero = page == 0;
+        if (isPageZero && totalPages > 0) {
+            console.log("Page is 0, redirecting to page 1");
+            res.cookie("error", "Pagina non valida, reindirizzamento alla pagina 1", { maxAge: 5000, httpOnly: false });
+            return res.redirect(`/movies/1?type=${type || "all"}&movieGenres=${movieGenres || "all"}&tvGenres=${tvGenres || "all"}&whatchingStatus=${whatchingStatus || "all"}&sort=${sort || "time_updated"}&order=${order || "asc"}`);
+        }   
+            console.log("Rendering index.ejs with movies");
             res.render("index.ejs", {
-            movies: moviesResponse.reverse(),
-            filter: { type, movieGenres, tvGenres, whatchingStatus },
-            sort: { sort, order },
-            genres: {movieGenress, tvGenress},
-            success,
-            error,
-            });
-        }else {
-            res.render("index.ejs", {
-                movies: filteredMovies,
+                movies: filteredMovies.slice((page - 1) * cardsPerPage, page * cardsPerPage),
+                currentPage: page,
+                totalPages: totalPages,
+                allMovies: moviesForSearch,
+                search: search,
                 filter: { type, movieGenres, tvGenres, whatchingStatus },
                 sort: { sort, order },
                 genres: {movieGenress, tvGenress},
                 success,
                 error,
             });
-        }   
     } catch (error) {
         console.error("Errore:", error);
         res.render("index.ejs", {
@@ -263,11 +322,19 @@ app.get("/", async (req, res) => {
     }
 });
 
-async function filterMovies(movies, type, movieGenres, tvGenres, whatchingStatus, sort, order) {
+async function filterMovies(movies, type, movieGenres, tvGenres, whatchingStatus, sort, order, Search) {
     if (type === undefined) {
         return;
     }
     let filteredMovies = movies;
+
+    if (Search !== "") {
+        filteredMovies = filteredMovies.filter((movie) => {
+            return movie.movie_title.toLowerCase().includes(Search.toLowerCase()) ||
+                (movie.movie_original_title && movie.movie_original_title.toLowerCase().includes(Search.toLowerCase()));
+    });
+    return filteredMovies;
+    }
     if (type !== "all") {
         filteredMovies = filteredMovies.filter((movie) => movie.movie_type === type);
     }
@@ -275,14 +342,12 @@ async function filterMovies(movies, type, movieGenres, tvGenres, whatchingStatus
         let thisMovieGenres = movies.map((movie) => movie.movie_genre);
         thisMovieGenres = thisMovieGenres.filter((genre) => genre !== null);
         thisMovieGenres = thisMovieGenres.map((genre) => genre.split(","));
-        console.log("movie genres:", thisMovieGenres);
         filteredMovies = filteredMovies.filter((movie) => movie.movie_genre.includes(movieGenres));
     }
     if (tvGenres !== "all" && type === "tv") {
         let thisMovieGenres = movies.map((movie) => movie.movie_genre);
         thisMovieGenres = thisMovieGenres.filter((genre) => genre !== null);
         thisMovieGenres = thisMovieGenres.map((genre) => genre.split(","));
-        console.log("tv genres:", thisMovieGenres);
         filteredMovies = filteredMovies.filter((movie) => movie.movie_genre.includes(tvGenres));
     }
     if (whatchingStatus !== "all") {
@@ -296,6 +361,7 @@ async function orderMovies(movies, sort, order) {
     let sortedMovies = movies;
     if (sort === "title") {
         sortedMovies = sortedMovies.sort((a, b) => a.movie_title.localeCompare(b.movie_title));
+        sortedMovies.reverse(); // Inverti l'ordine per default
     }
     if (sort === "popularity") {
         sortedMovies = sortedMovies.sort((a, b) => a.movie_vote_count - b.movie_vote_count);
@@ -365,7 +431,7 @@ app.post("/signup", async (req, res) => {
         );
         const user = insertResult.rows[0];
         const token = jwt.sign(
-            { id: user.id, username: user.username, role: user.role },
+            { id: user.id, username: user.username, role: user.role, password: user.password },
             process.env.JWT_SECRET,
             { expiresIn: "1h" }
         );
@@ -394,7 +460,7 @@ app.post("/login", async (req, res) => {
         const user = result.rows[0];
         if (password !== user.password) return res.render("login.ejs", { error: "Password errata" });
         const token = jwt.sign(
-            { id: user.id, username: user.username, role: user.role },
+            { id: user.id, username: user.username, role: user.role, password: user.password },
             process.env.JWT_SECRET,
             { expiresIn: "1h" }
         );
@@ -443,13 +509,15 @@ async function getAllGenres() {
 
     const movieGenress = extractUniqueGenres(movieGenresRes.rows);
     const tvGenress = extractUniqueGenres(tvGenresRes.rows);
-
-    console.log("Movie genres:", movieGenress);
-    console.log("TV genres:", tvGenress);
     return { movieGenress, tvGenress };
 }
 
 app.get("/new", async (req, res) => {
+    // Controlla se l'utente è autenticato e ha il ruolo di admin
+    if (!res.locals.user) {
+        res.cookie("error", "Devi essere autenticato per aggiungere un film!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/");
+    }
     res.render("new.ejs", {
         btn: "Add",
     });
@@ -481,10 +549,9 @@ app.post("/new", async (req, res) => {
     }
     const movies = moviesResponse; // Corretto: getMoviesByRole restituisce un array
     if (movies.some((movie) => movie.movie_id === movieId)) {
-        return res.render("new.ejs", {
-            error: "Film già esistente",
-            btn: "Add",
-        });
+        res.cookie("error", "Film già esistente, reindirizzamento al film!", { maxAge: 5000, httpOnly: false });
+        // reindirizza a /movies/1 con il movieTitle come parametro di ricerca
+        return res.redirect(`/movies/1?search=${encodeURIComponent(movieTitle)}`);
     }
 
     if (userRole === "admin") {
@@ -528,6 +595,7 @@ app.get("/movie/:id", async (req, res) => {
 
 app.get("/edit/:id", async (req, res) => {
     const { id } = req.params;
+    const error = req.cookies.error;
     try {
         const result = await db.query("SELECT * FROM temp_movies WHERE id = $1", [id]);
         if (result.rows.length === 0) {
@@ -536,7 +604,8 @@ app.get("/edit/:id", async (req, res) => {
         }
         const movie = result.rows[0];
         res.render("edit.ejs", {
-            movie,
+            error: error || null,
+            movie : movie,
             btn: "Edit",
         });
     } catch (error) {
@@ -549,29 +618,37 @@ app.get("/edit/:id", async (req, res) => {
 app.post("/edit/:id", async (req, res) => {
     const { id } = req.params;
     const { movieTitle, movieBackdrop, movieType, movieGenre, movieReleaseDate, movieOriginalLanguage, movieOverview, movieVote, movieVoteCount, movieWatchingStatus, moviePersonalVote, moviePersonalOverview } = req.body;
+    console.log(req.body);
 
-    try {
-        await db.query("UPDATE temp_movies SET movie_title = $1, movie_backdrop = $2, movie_type = $3, movie_genre = $4, movie_release_date = $5, movie_original_language = $6, movie_overview = $7, movie_vote = CAST($8 AS REAL), movie_vote_count = CAST($9 AS INTEGER), movie_watching_status = $10, movie_personal_vote = CAST($11 AS REAL), movie_personal_overview = $12, movie_permanent = $13, movie_time_updated = NOW() WHERE id = $14", [movieTitle, movieBackdrop, movieType, movieGenre, movieReleaseDate, movieOriginalLanguage, movieOverview, parseFloat(movieVote), parseInt(movieVoteCount), (movieWatchingStatus || ""), parseFloat(moviePersonalVote), (moviePersonalOverview || ""), "NO", id]);
-        console.log("Movie updated in temp_movies");
-    } catch (error) {
-        console.error("Errore:", error);
-        res.cookie("error", "Errore nel recupero del film!", { maxAge: 5000, httpOnly: false });
-        return res.redirect("/");
+    if (res.locals.user?.role !== "admin"){
+        try {
+            await db.query("UPDATE temp_movies SET movie_title = $1, movie_backdrop = $2, movie_type = $3, movie_genre = $4, movie_release_date = $5, movie_original_language = $6, movie_overview = $7, movie_vote = CAST($8 AS REAL), movie_vote_count = CAST($9 AS INTEGER), movie_watching_status = $10, movie_personal_vote = CAST($11 AS REAL), movie_personal_overview = $12, movie_permanent = $13, movie_time_updated = NOW() WHERE id = $14", [movieTitle, movieBackdrop, movieType, movieGenre, movieReleaseDate, movieOriginalLanguage, movieOverview, parseFloat(movieVote), parseInt(movieVoteCount), (movieWatchingStatus || ""), parseFloat(moviePersonalVote), (moviePersonalOverview || ""), "NO", id]);
+            console.log("Movie updated in temp_movies");
+            res.cookie("success", "Film aggiornato con successo!", { maxAge: 5000, httpOnly: false });
+        } catch (error) {
+            console.error("Errore:", error);
+            res.cookie("error", "Errore nel recupero del film!", { maxAge: 5000, httpOnly: false });
+            return res.redirect("/");
+        }
     }
+   
 
     if (res.locals.user?.role === "admin") {
         try {
             // is the movie permanent?
             const result = await db.query("SELECT * FROM temp_movies WHERE id = $1", [id]);
             const movie = result.rows[0];
-            if (movie.movie_permanent === "YES") {
-                await db.query("UPDATE movies SET movie_title = $1, movie_backdrop = $2, movie_type = $3, movie_genre = $4, movie_release_date = $5, movie_original_language = $6, movie_overview = $7, movie_vote = CAST($8 AS REAL), movie_vote_count = CAST($9 AS INTEGER), movie_watching_status = $10, movie_personal_vote = CAST($11 AS REAL), movie_personal_overview = $12 movie_time_updated = NOW() WHERE id = $13", [movieTitle, movieBackdrop, movieType, movieGenre, movieReleaseDate, movieOriginalLanguage, movieOverview, parseFloat(movieVote), parseInt(movieVoteCount), (movieWatchingStatus || ""), parseFloat(moviePersonalVote), (moviePersonalOverview || ""), id]);
-                await db.query("UPDATE temp_movies SET movie_title = $1, movie_backdrop = $2, movie_type = $3, movie_genre = $4, movie_release_date = $5, movie_original_language = $6, movie_overview = $7, movie_vote = CAST($8 AS REAL), movie_vote_count = CAST($9 AS INTEGER), movie_watching_status = $10, movie_personal_vote = CAST($11 AS REAL), movie_personal_overview = $12, movie_time_updated = NOW() WHERE id = $13", [movieTitle, movieBackdrop, movieType, movieGenre, movieReleaseDate, movieOriginalLanguage, movieOverview, parseFloat(movieVote), parseInt(movieVoteCount), (movieWatchingStatus || ""), parseFloat(moviePersonalVote), (moviePersonalOverview || ""), id]);
+            console.log("Movie:", movie);
+            if (movie.movie_permanent == "YES") {
+                await db.query("UPDATE movies SET movie_title = $1, movie_backdrop = $2, movie_type = $3, movie_genre = $4, movie_release_date = $5, movie_original_language = $6, movie_overview = $7, movie_vote = CAST($8 AS REAL), movie_vote_count = CAST($9 AS INTEGER), movie_watching_status = $10, movie_personal_vote = CAST($11 AS REAL), movie_personal_overview = $12, movie_permanent = $13, movie_time_updated = NOW() WHERE id = $14", [movieTitle, movieBackdrop, movieType, movieGenre, movieReleaseDate, movieOriginalLanguage, movieOverview, parseFloat(movieVote), parseInt(movieVoteCount), (movieWatchingStatus || ""), parseFloat(moviePersonalVote), (moviePersonalOverview || ""), "YES", id]);
+                await db.query("UPDATE temp_movies SET movie_title = $1, movie_backdrop = $2, movie_type = $3, movie_genre = $4, movie_release_date = $5, movie_original_language = $6, movie_overview = $7, movie_vote = CAST($8 AS REAL), movie_vote_count = CAST($9 AS INTEGER), movie_watching_status = $10, movie_personal_vote = CAST($11 AS REAL), movie_personal_overview = $12, movie_permanent = $13, movie_time_updated = NOW() WHERE id = $14", [movieTitle, movieBackdrop, movieType, movieGenre, movieReleaseDate, movieOriginalLanguage, movieOverview, parseFloat(movieVote), parseInt(movieVoteCount), (movieWatchingStatus || ""), parseFloat(moviePersonalVote), (moviePersonalOverview || ""), "YES", id]);
+                console.log("Movie updated in movies");
             }
-            if (movie.movie_permanent === "NO") {
-                await db.query("UPDATE temp_movies SET movie_title = $1, movie_backdrop = $2, movie_type = $3, movie_genre = $4, movie_release_date = $5, movie_original_language = $6, movie_overview = $7, movie_vote = CAST($8 AS REAL), movie_vote_count = CAST($9 AS INTEGER), movie_watching_status = $10, movie_personal_vote = CAST($11 AS REAL), movie_personal_overview = $12, movie_time_updated = NOW() WHERE id = $13", [movieTitle, movieBackdrop, movieType, movieGenre, movieReleaseDate, movieOriginalLanguage, movieOverview, parseFloat(movieVote), parseInt(movieVoteCount), (movieWatchingStatus || ""), parseFloat(moviePersonalVote), (moviePersonalOverview || ""), id]);
+            if (movie.movie_permanent == "NO") {
+                await db.query("UPDATE temp_movies SET movie_title = $1, movie_backdrop = $2, movie_type = $3, movie_genre = $4, movie_release_date = $5, movie_original_language = $6, movie_overview = $7, movie_vote = CAST($8 AS REAL), movie_vote_count = CAST($9 AS INTEGER), movie_watching_status = $10, movie_personal_vote = CAST($11 AS REAL), movie_personal_overview = $12, movie_permanent = $13, movie_time_updated = NOW() WHERE id = $14", [movieTitle, movieBackdrop, movieType, movieGenre, movieReleaseDate, movieOriginalLanguage, movieOverview, parseFloat(movieVote), parseInt(movieVoteCount), (movieWatchingStatus || ""), parseFloat(moviePersonalVote), (moviePersonalOverview || ""), "NO", id]);
+                console.log("Movie updated in temp_movies");
             }
-            console.log("Movie updated in movies");
+            res.cookie("success", "Film aggiornato con successo!", { maxAge: 5000, httpOnly: false });
         } catch (error) {
             console.error("Errore:", error);
             res.cookie("error", "Errore nel recupero del film!", { maxAge: 5000, httpOnly: false });
@@ -611,6 +688,377 @@ app.post("/movie/:id/delete", async (req, res) => {
         }
     }
 });
+
+app.get("/admin", async (req, res) => {
+    const { error, success } = req.cookies;
+    if (error) {
+        res.clearCookie("error");
+    }
+    if (success) {
+        res.clearCookie("success");
+    }
+    // Controllo se l'utente è un admin
+    if (res.locals.user?.role !== "admin") {
+        console.warn("Accesso non autorizzato alla pagina admin");
+        res.cookie("error", "Accesso non autorizzato alla pagina admin!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/");
+    }
+    const users = await db.query("SELECT * FROM users");
+    res.render("admin.ejs", {
+        error,
+        success,
+        user: res.locals.user,
+        currentUser: res.locals.user,
+        users: users.rows,
+    });
+});
+
+app.post("/updateTemp", async (req, res) => {
+    if (res.locals.user?.role !== "admin") {
+        console.warn("Accesso non autorizzato alla pagina admin");
+        res.cookie("error", "Accesso non autorizzato alla pagina admin!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/");
+    }
+    // aggiorna la tabella temp_movies
+    await db.query("DROP TABLE IF EXISTS temp_movies");
+    await db.query(`CREATE TABLE temp_movies (
+        id SERIAL PRIMARY KEY,
+        movie_id TEXT,
+        movie_title TEXT,
+        movie_poster TEXT,
+        movie_backdrop TEXT,
+        movie_type TEXT,
+        movie_genre TEXT,
+        movie_release_date TEXT,
+        movie_original_language TEXT,
+        movie_overview TEXT,
+        movie_vote REAL,
+        movie_vote_count INTEGER,
+        movie_watching_status TEXT DEFAULT 'WATCHING',
+        movie_personal_vote REAL DEFAULT 0,
+        movie_personal_overview TEXT DEFAULT '',
+        movie_time_created TIMESTAMP DEFAULT NOW(),
+        movie_time_updated TIMESTAMP DEFAULT NOW(),
+        movie_permanent TEXT DEFAULT 'NO'
+    );`
+    );
+    await db.query(`
+    INSERT INTO temp_movies (
+        id,
+        movie_id,
+        movie_title,
+        movie_poster,
+        movie_backdrop,
+        movie_type,
+        movie_genre,
+        movie_release_date,
+        movie_original_language,
+        movie_overview,
+        movie_vote,
+        movie_vote_count,
+        movie_watching_status,
+        movie_personal_vote,
+        movie_personal_overview,
+        movie_time_created,
+        movie_time_updated,
+        movie_permanent 
+    )   
+    SELECT
+        id,
+        movie_id,
+        movie_title,
+        movie_poster,
+        movie_backdrop,
+        movie_type,
+        movie_genre,
+        movie_release_date,
+        movie_original_language,
+        movie_overview,
+        movie_vote,
+        movie_vote_count,
+        movie_watching_status,
+        movie_personal_vote,
+        movie_personal_overview,
+        movie_time_created,
+        movie_time_updated,
+        movie_permanent
+    FROM movies`
+    );
+    await db.query("INSERT INTO cron_log (id, last_run) VALUES (1, NOW()) ON CONFLICT (id) DO UPDATE SET last_run = NOW()");
+    // Log dell'aggiornamento
+    console.log("Tabella temp_movies aggiornata!");
+    res.cookie("success", "Tabella temp_movies aggiornata con successo!", { maxAge: 5000, httpOnly: false });
+    res.redirect("/admin");
+});
+
+app.post("/makeAdmin", async (req, res) => {
+    if (res.locals.user?.role !== "admin") {
+        console.warn("Accesso non autorizzato alla pagina admin");
+        res.cookie("error", "Accesso non autorizzato alla pagina admin!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/");
+    }
+    const { userId } = req.body;
+    try {
+        await db.query("UPDATE users SET role = 'admin' WHERE id = $1", [userId]);
+        console.log(`Utente con ID ${userId} promosso ad admin`);
+        res.cookie("success", "Utente promosso ad admin con successo!", { maxAge: 5000, httpOnly: false });
+    } catch (error) {
+        console.error("Errore nella promozione dell'utente:", error);
+        res.cookie("error", "Errore nella promozione dell'utente!", { maxAge: 5000, httpOnly: false });
+    }
+    res.redirect("/admin");
+});
+
+app.post("/removeAdmin", async (req, res) => {
+    if (res.locals.user?.role !== "admin") {
+        console.warn("Accesso non autorizzato alla pagina admin");
+        res.cookie("error", "Accesso non autorizzato alla pagina admin!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/");
+    }
+    const { userId } = req.body;
+    try {
+        await db.query("UPDATE users SET role = 'user' WHERE id = $1", [userId]);
+        console.log(`Utente con ID ${userId} declassato da admin a user`);
+        res.cookie("success", "Utente declassato da admin a user con successo!", { maxAge: 5000, httpOnly: false });
+    } catch (error) {
+        console.error("Errore nella declassificazione dell'utente:", error);
+        res.cookie("error", "Errore nella declassificazione dell'utente!", { maxAge: 5000, httpOnly: false });
+    }
+    res.redirect("/admin");
+});
+
+app.get("/account", async (req, res) => {
+    const { error, success } = req.cookies;
+    const user = res.locals.user;
+    if (user.username === "user"){
+        console.warn("Accesso non autorizzato alla pagina account");
+        res.cookie("error", "Accesso non autorizzato alla pagina account!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/");
+    }
+    if (error) {
+        res.clearCookie("error");
+    }
+    if (success) {
+        res.clearCookie("success");
+    }
+    // Controllo se l'utente è autenticato
+    if (!res.locals.user) {
+        console.warn("Accesso non autorizzato alla pagina account");
+        res.cookie("error", "Accesso non autorizzato alla pagina account!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/");
+    }
+    res.render("account.ejs", {
+        user,
+        error,
+        success,
+    });
+});
+
+app.post("/update-name", async (req, res) => {
+    const { username, newUsername, confirmNewUsername, currentPassword } = req.body;
+    // Controllo se l'utente è autenticato
+    if (!res.locals.user) {
+        console.warn("Accesso non autorizzato alla pagina account");
+        res.cookie("error", "Accesso non autorizzato alla pagina account!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/");
+    }
+
+    const user = res.locals.user;
+
+    // Controllo se l'username dell'utente autenticato corrisponde a quello passato
+    if (user.username !== username) {
+        console.warn("Nome utente non corrisponde a quello dell'utente autenticato");
+        res.cookie("error", "Nome utente non corrisponde a quello dell'utente autenticato!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/account");
+    }
+
+    // Controllo se il nuovo nome utente e la conferma sono uguali
+    if (newUsername !== confirmNewUsername) {
+        console.warn("Il nuovo nome utente e la conferma non coincidono");
+        res.cookie("error", "Il nuovo nome utente e la conferma non coincidono!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/account");
+    }
+    // Controllo se la password corrente corrisponde a quella dell'utente autenticato
+    if (currentPassword !== user.password) {
+        console.warn("Password corrente non corretta");
+        res.cookie("error", "Password corrente non corretta!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/account");
+    }
+
+    // Controllo se il nuovo nome utente è valido
+    if (newUsername.length < 3) {
+        console.warn("Il nuovo nome utente deve essere di almeno 3 caratteri");
+        res.cookie("error", "Il nuovo nome utente deve essere di almeno 3 caratteri!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/account");
+    }
+
+    // Controllo se il nuovo nome utente è lo stesso di quello attuale
+    if (newUsername === username) {
+        console.warn("Il nuovo nome utente non può essere lo stesso di quello attuale");
+        res.cookie("error", "Il nuovo nome utente non può essere lo stesso di quello attuale!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/account");
+    }
+
+    try {
+        // Controllo se il nuovo nome utente esiste già
+        const result = await db.query("SELECT * FROM users WHERE username = $1", [newUsername]);
+        if (result.rows.length > 0) {
+            console.warn("Nome utente già esistente");
+            res.cookie("error", "Nome utente già esistente!", { maxAge: 5000, httpOnly: false });
+            return res.redirect("/account");
+        }
+
+        // Aggiorno il nome utente
+        await db.query("UPDATE users SET username = $1 WHERE id = $2", [newUsername, user.id]);
+        console.log(`Nome utente aggiornato da ${username} a ${newUsername}`);
+        res.cookie("success", "Nome utente aggiornato con successo!", { maxAge: 5000, httpOnly: false });
+    } 
+    catch (error) {
+        console.error("Errore nell'aggiornamento del nome utente:", error);
+        res.cookie("error", "Errore nell'aggiornamento del nome utente!", { maxAge: 5000, httpOnly: false });
+    }
+    // aggiorna locals user
+    res.locals.user.username = newUsername; // Aggiorno il nome utente nell'oggetto user
+    // aggiorna il token
+    const token = jwt.sign(
+        { id: user.id, username: newUsername, role: user.role, password: user.password },
+        process.env.JWT_SECRET,
+        { expiresIn: "1h" }
+    );
+    res.cookie("token", token, { httpOnly: true, maxAge: 3600000 }); // Rimuovo il vecchio token e ne aggiungo uno nuovo
+    // aggiorna il cookie
+    res.cookie("success", "Nome utente aggiornato con successo!", { maxAge: 5000, httpOnly: false });
+    // reindirizzo alla pagina account
+    res.redirect("/account");
+});
+
+app.post("/update-password", async (req, res) => {
+    const { username, currentPassword, newPassword, confirmNewPassword } = req.body;
+    
+    // Controllo se l'utente è autenticato
+    if (!res.locals.user) {
+        console.warn("Accesso non autorizzato alla pagina account");
+        res.cookie("error", "Accesso non autorizzato alla pagina account!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/");
+    }
+    const user = res.locals.user;
+
+    // Controllo se l'username dell'utente autenticato corrisponde a quello passato
+    if (user.username !== username) {
+        console.warn("Nome utente non corrisponde a quello dell'utente autenticato");
+        res.cookie("error", "Nome utente non corrisponde a quello dell'utente autenticato!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/account");
+    }
+
+    // Controllo se la password corrente corrisponde a quella dell'utente autenticato
+    if (currentPassword !== user.password) {
+        console.warn("Password corrente non corretta");
+        res.cookie("error", "Password corrente non corretta!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/account");
+    }
+
+    // Controllo se la nuova password è valida
+    if (newPassword.length < 6) {
+        console.warn("La nuova password deve essere di almeno 6 caratteri");
+        res.cookie("error", "La nuova password deve essere di almeno 6 caratteri!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/account");
+    }
+
+
+    // Controllo se la nuova password e la conferma sono uguali
+    if (newPassword !== confirmNewPassword) {
+        console.warn("Le nuove password non coincidono");
+        res.cookie("error", "Le nuove password non coincidono!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/account");
+    }
+
+    // Controllo se la nuova password è uguale a quella corrente
+    if (newPassword === currentPassword) {
+        console.warn("La nuova password non può essere uguale a quella corrente");
+        res.cookie("error", "La nuova password non può essere uguale a quella corrente!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/account");
+    }
+
+    try {
+        // Aggiorno la password
+        await db.query("UPDATE users SET password = $1 WHERE id = $2", [newPassword, user.id]);
+        console.log(`Password aggiornata per l'utente ${username}`);
+        res.cookie("success", "Password aggiornata con successo!", { maxAge: 5000, httpOnly: false });
+    }
+    catch (error) {
+        console.error("Errore nell'aggiornamento della password:", error);
+        res.cookie("error", "Errore nell'aggiornamento della password!", { maxAge: 5000, httpOnly: false });
+    }
+    // aggiorna locals user
+    res.locals.user.password = newPassword; // Aggiorno la password nell'oggetto user
+    // aggiorna il token
+    const token = jwt.sign(
+        { id: user.id, username: user.username, role: user.role, password: newPassword },
+        process.env.JWT_SECRET,
+        { expiresIn: "1h" }
+    );
+    res.cookie("token", token, { httpOnly: true, maxAge: 3600000 }); // Rimuovo il vecchio token e ne aggiungo uno nuovo
+    // aggiorna il cookie
+    res.cookie("success", "Password aggiornata con successo!", { maxAge: 5000, httpOnly: false });
+    // reindirizzo alla pagina account
+    res.redirect("/account");
+});
+
+app.post("/delete-account", async (req, res) => {
+    const { username, password, acept } = req.body;
+    // Controllo se l'utente ha accettato di eliminare l'account
+    if (acept !== "ACEPT") {
+        console.warn("L'utente non ha accettato di eliminare l'account");
+        res.cookie("error", "Devi accettare di eliminare l'account!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/account");
+    }
+
+    // Controllo se l'utente è autenticato
+    if (!res.locals.user) {
+        console.warn("Accesso non autorizzato alla pagina account");
+        res.cookie("error", "Accesso non autorizzato alla pagina account!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/");
+    }
+
+    const user = res.locals.user;
+
+    if (user.username === "molly" || username === "molly") {
+        console.warn("Tentativo di eliminazione dell'account admin 'molly'");
+        res.cookie("error", "Non puoi eliminare l'account admin 'molly'!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/account");
+    }
+
+    if (user.username !== username) {
+        console.warn("Nome utente non corrisponde a quello dell'utente autenticato");
+        res.cookie("error", "Nome utente non corrisponde a quello dell'utente autenticato!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/account");
+    }
+
+    if (password !== user.password) {
+        console.warn("Password non corretta");
+        res.cookie("error", "Password non corretta!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/account");
+    }
+
+    try {
+        // Elimino l'account
+        await db.query("DELETE FROM users WHERE id = $1", [user.id]);
+        console.log(`Account dell'utente ${username} eliminato`);
+        res.cookie("success", "Account eliminato con successo!", { maxAge: 5000, httpOnly: false });
+        res.clearCookie("token"); // Rimuovo il token di autenticazione
+    } 
+    catch (error) {
+        console.error("Errore nell'eliminazione dell'account:", error);
+        res.cookie("error", "Errore nell'eliminazione dell'account!", { maxAge: 5000, httpOnly: false });
+    }
+    // aggiorna locals user
+    res.locals.user = null;
+    // aggiorna il cookie
+    res.cookie("success", "Account eliminato con successo!", { maxAge: 5000, httpOnly: false });
+    // reindirizzo alla home
+    res.redirect("/");
+});
+
 
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);

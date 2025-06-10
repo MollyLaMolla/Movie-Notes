@@ -9,17 +9,29 @@
     <title>Movie Notes</title>
 </head>
 <body>
+    <%- include('partials/header.ejs') %>
+    <%- include('partials/cookie.ejs') %>
+    <div class="new-movie-centerer">
+    <div class="search-container">
+        <h1>Search for a movie</h1>
+        <p class="search-instructions">Type the name of the movie you want to add to your list.</p>
     <div class="search">
         <input type="search" name="search" id="searchInput" placeholder="Search for a movie..." autocomplete="off" onchange="this.value = this.value.trim()">
+        <div class="no-display" id="movie-selected">
+            <img class="movie-small-image selected-img" src="" alt="">
+            <p class="movie-small-title selected-title"></p>
+        </div>
+        <div id="search-loader">
+            <h3>Loading</h3>
+            <img src="/images/loader.gif" alt="Loading...">    
+        </div>
         <div id="searchSuggestions" class="search-suggestions">
             <ul id="suggestionsList"></ul>
         </div>
     </div>
-
-    <div class="no-display" id="movie-selected">
-        <img class="movie-small-image selected-img" src="" alt="">
-        <p class="movie-small-title selected-title"></p>
     </div>
+
+    
 
     <div id="movie-data" class="no-display">
         <div id="movie-data-header">
@@ -35,9 +47,9 @@
                 <h2 id="selected-movie-vote">
                     Vote: 
                     <span id="vote-avg-num"></span>
-                    <span id="vote-avg">/10</span>
-                    <span id="stars"><span id="full-stars"></span><span id="half-stars"></span><span id="empty-stars"></span></span>
-                    <span id="vote-count"></span>
+                    <span id="vote-avg">/10</span><br>
+                    <span id="stars"><span id="full-stars"></span><span id="half-stars"></span><span id="empty-stars"></span><span id="vote-count"></span></span>
+                    
                 </h2>
             </div>
         </div>
@@ -47,26 +59,33 @@
         </div>
     </div>
 
-    <div class="watch no-display">
+    <div class="whatch no-display">
+        <div class="whatching-status-info">
+            <h2>Select the whatching status of the movie:</h2>
+            <p>you can change it later.</p>
+            <p class="whatching-instructions">Click on the radio button to select the status you want.</p>
+        </div>
+        <div class="whatching-status-container">
         <div class="completed">
-            <input type="radio" id="completed" name="watching-status" value="Completed">
+            <input type="radio" id="completed" name="watching-status" value="Completed" style="display: none;">
             <label for="completed">Completed</label>
         </div>
         <div class="whatching">
-            <input type="radio" id="whatching" name="watching-status" value="Watching">
-            <label for="whatching">Watching</label>
+            <input type="radio" id="whatching" name="watching-status" value="Whatching" style="display: none;">
+            <label for="whatching">Whatching</label>
         </div>
         <div class="future-watch">
-            <input type="radio" id="future-watch" name="watching-status" value="Plan to Watch">
-            <label for="future-watch">Would like to Watch</label>
+            <input type="radio" id="future-watch" name="watching-status" value="Plan to Watch" style="display: none;">
+            <label for="future-watch">Would like to Whatch</label>
         </div>
         <div class="on-hold">
-            <input type="radio" id="on-hold" name="watching-status" value="On Hold">
+            <input type="radio" id="on-hold" name="watching-status" value="On Hold" style="display: none;">
             <label for="on-hold">On Hold</label>
         </div>
         <div class="dropped">
-            <input type="radio" id="dropped" name="watching-status" value="Dropped">
+            <input type="radio" id="dropped" name="watching-status" value="Dropped" style="display: none;">
             <label for="dropped">Dropped</label>
+        </div>
         </div>
     </div>
 
@@ -75,11 +94,11 @@
             <h2>Your vote:</h2>
             <p id="personal-vote-text">Rate the movie from 0 to 10</p>
             <p id="personal-vote-text-3">You can use decimals (e.g. 7.5)</p>
-            <input type="number" id="personal-vote" name="personal-vote" min="0" max="10" step="0.1" value="0" required>
+            <input type="number" id="personal-vote" name="personal-vote" min="0" max="10" step="0.1" required value="0" oninput="this.value = Math.min(Math.max(this.value, 0), 10);">
         </div>
         <div class="personal-overview-container">
             <h2>Your overview:</h2>
-            <textarea id="personal-overview" name="personal-overview" rows="4" cols="50"></textarea>
+            <textarea id="personal-overview" name="personal-overview" rows="8" cols="50"></textarea>
         </div>
     </div>
 
@@ -103,6 +122,7 @@
     <div class="button-container no-display">
         <button id="submit-button">Submit</button>
     </div>
+    </div>
 
     <% if (locals.error) { %>
         <div class="error-container">
@@ -110,8 +130,10 @@
         </div>
     <% } %>
 
+    <script src="/function/header_animation.js"></script>
     <script type="module" src="/function/search.js"></script>
     <script src="/function/newMovie.js"></script>
     <script src="/function/messages.js"></script>
+    <%- include('partials/live.ejs') %>
 </body>
 </html>

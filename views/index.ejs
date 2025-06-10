@@ -5,118 +5,183 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <%- include('partials/text_font.ejs') %>
-    <link rel="stylesheet" href="style/style.css">
+    <link rel="stylesheet" href="../style/style.css">
     <title>Movie Notes</title>
 </head>
+
 <body>
     
-    <div class="new movie">
-        <a href="/new" class="new-movie">
-            <button>New Movie</button>
-        </a>
-    </div>
-<% if (user.username === "user") { %>
-    <div id="login">
-        <a href="/login" class="login">
-            <button>Login</button>
-        </a>
-    </div>
-
-    <div id="signup">
-        <a href="/signup" class="signup">
-            <button>Sign Up</button>
-        </a>
-    </div>
-<% } %>
-
-<% if (user.username !== "user") { %>
-    <div id="logout">
-        <form action="/logout" method="POST">
-            <button type="submit" class="logout">Logout</button>
-        </form>
-    </div>
-<% } %>
-        
+    <%- include('partials/header.ejs') %>
+    <%- include('partials/cookie.ejs') %>
 <% if (user) { %>
     <% if (user.role === "admin") { %>
         <div class="status-admin status">
+            <div class="status-info">
+                <p>everything changed made on this page will be permanent.</p>
+                <p class="time-reset">Reset in <span id="time-reset-span">15:00</span></p>
+            </div>
+            <svg id="status-info" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M440-280h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Zm0 520q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/></svg>
             <p>Modifiche permanenti ✅</p>
         </div>
     <% } else { %>
         <div class="status-user status">
+            <div class="status-info">
+                <p>The changes are temporary.</p>
+                <p>Only admins can save them permanently.</p>
+                <p class="time-reset">Reset in <span id="time-reset-span">15:00</span></p>
+            </div>
+            <svg id="status-info" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M440-280h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Zm0 520q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/></svg>
             <p>Modifiche temporanee ⏳</p>
         </div>
     <% } %>
 <% } %>
-
-    <div class="movies-container">
-        <div class="movies'filter">
-            <form action="/" method="GET" class="filter-form">
-                <select name="type" class="type-select">
+    <div class="content-centerer">
+    <div class="movies-filter">
+            <form action="/movies/1" method="GET" class="filter-form">
+                <div class="filter-first-row">
+                    <div class="search-div filter-div">
+                    <input type="text" name="search" class="movie-filter-search-input" placeholder="Search by title" autocomplete="off" value="<%= search || '' %>">
+                     <button type="submit" class="search-button">
+                        Search
+                    </button>
+                    <div id="search-results">
+                        
+                    </div>
+                </div>
+                </div>
+                <div class="filter-second-row">
+                <div class="movie-type-div filter-div">
+                    <p>Type:</p>
+                    <select name="type" class="type-select">
                     <option value="all">All</option>
                     <option value="movie" <% if (filter.type === "movie") { %> selected <% } %>>Movie</option>
                     <option value="tv" <% if (filter.type === "tv") { %> selected <% } %>>TV</option>
                 </select>
-                <select name="movieGenres" class="movie-genre-select no-display">
+                </div>
+                <div class="movie-genre-div filter-div no-display">
+                    <p>Movie Genres:</p>
+                    <select name="movieGenres" class="movie-genre-select" value="undefined">
                     <option value="all">All</option>
                     <% genres.movieGenress.forEach(genre => { %>
                         <option value="<%= genre %>" <% if (filter.movieGenres === genre) { %> selected <% } %>><%= genre %></option>
                     <% }) %>
-                </select>
-                <select name="tvGenres" class="tv-genre-select no-display">
-                    <option value="all">All</option>
-                    <% genres.tvGenress.forEach(genre => { %>
-                        <option value="<%= genre %>" <% if (filter.tvGenres === genre) { %> selected <% } %>><%= genre %></option>
-                    <% }) %>
-                </select>
-                <select name="whatchingStatus" class="whatching-status-select">
-                    <option value="all" <% if (filter.whatchingStatus === "all") { %> selected <% } %>>All</option>
-                    <option value="Completed" <% if (filter.whatchingStatus === "Completed") { %> selected <% } %>>Completed</option>
-                    <option value="Watching" <% if (filter.whatchingStatus === "Watching") { %> selected <% } %>>Watching</option>
-                    <option value="On Hold" <% if (filter.whatchingStatus === "On Hold") { %> selected <% } %>>On Hold</option>
-                    <option value="Dropped" <% if (filter.whatchingStatus === "Dropped") { %> selected <% } %>>Dropped</option>
-                    <option value="Plan to Watch" <% if (filter.whatchingStatus === "Plan to Watch") { %> selected <% } %>>Plan to Watch</option>
-                </select>
-                <select name="sort" class="sort-select">
-                    <option value="title" <% if (sort.sort === "title") { %> selected <% } %>>Title</option>
-                    <option value="popularity" <% if (sort.sort === "popularity") { %> selected <% } %>>Popularity</option>
-                    <option value="rating" <% if (sort.sort === "rating") { %> selected <% } %>>Rating</option>
-                    <option value="time_created" <% if (sort.sort === "time_created" || sort.sort === undefined) { %> selected <% } %>>Time Created</option>
-                    <option value="time_updated" <% if (sort.sort === "time_updated") { %> selected <% } %>>Time Updated</option>
-                    <option value="personal_vote" <% if (sort.sort === "personal_vote") { %> selected <% } %>>Personal Vote</option>
-                    <option value="release_date" <% if (sort.sort === "release_date") { %> selected <% } %>>Release Date</option>
-                </select>
-                <select name="order" class="order-select">
-                    <option value="asc" <% if (sort.order === "asc") { %> selected <% } %>>Ascending</option>
-                    <option value="desc" <% if (sort.order === "desc") { %> selected <% } %>>Descending</option>
-                </select>
-                <button type="submit" class="filter-button">Filter</button>
+                    </select>
+                </div>
+                <div class="tv-genre-div filter-div no-display">
+                    <p>TV Genres:</p>
+                    <select name="tvGenres" class="tv-genre-select">
+                        <option value="all">All</option>
+                        <% genres.tvGenress.forEach(genre => { %>
+                            <option value="<%= genre %>" <% if (filter.tvGenres === genre) { %> selected <% } %>><%= genre %></option>
+                        <% }) %>
+                        </select>
+                </div>
+                <div class="whatching-status-div filter-div">
+                    <p>Watching Status:</p>
+                    <select name="whatchingStatus" class="whatching-status-select">
+                        <option value="all" <% if (filter.whatchingStatus === "all") { %> selected <% } %>>All</option>
+                        <option value="Completed" <% if (filter.whatchingStatus === "Completed") { %> selected <% } %>>Completed</option>
+                        <option value="Whatching" <% if (filter.whatchingStatus === "Whatching") { %> selected <% } %>>Whatching</option>
+                        <option value="On Hold" <% if (filter.whatchingStatus === "On Hold") { %> selected <% } %>>On Hold</option>
+                        <option value="Dropped" <% if (filter.whatchingStatus === "Dropped") { %> selected <% } %>>Dropped</option>
+                        <option value="Plan to Watch" <% if (filter.whatchingStatus === "Plan to Watch") { %> selected <% } %>>Plan to Watch</option>
+                    </select>
+                </div>
+                <div class="sort-div filter-div">
+                    <p>Sort by:</p>
+                    <select name="sort" class="sort-select">
+                        <option value="title" <% if (sort.sort === "title") { %> selected <% } %>>Title</option>
+                        <option value="popularity" <% if (sort.sort === "popularity") { %> selected <% } %>>Popularity</option>
+                        <option value="rating" <% if (sort.sort === "rating") { %> selected <% } %>>Rating</option>
+                        <option value="time_created" <% if (sort.sort === "time_created") { %> selected <% } %>>Time Created</option>
+                        <option value="time_updated" <% if (sort.sort === "time_updated" || sort.sort === undefined) { %> selected <% } %>>Time Updated</option>
+                        <option value="personal_vote" <% if (sort.sort === "personal_vote") { %> selected <% } %>>Personal Vote</option>
+                        <option value="release_date" <% if (sort.sort === "release_date") { %> selected <% } %>>Release Date</option>
+                    </select>
+                </div>
+                <div class="order-div filter-div">
+                    <p>Order:</p>
+                    <select name="order" class="order-select">
+                        <option value="asc" <% if (sort.order === "asc") { %> selected <% } %>>Ascending</option>
+                        <option value="desc" <% if (sort.order === "desc") { %> selected <% } %>>Descending</option>
+                    </select>
+                </div>
+                <div class="filter-button-div">
+                    <a href="/" class="filter-reset">RESET</a>
+                    <button type="submit" class="primary-button filter-button">Filter</button>
+                </div>
+                </div>
             </form>
         </div>
+
+    <div class="movies-container">
+        <a href="/new" class="new-movie"></a>
         <% if (locals.movies) { %>
             <% movies.forEach(movie => {
                 const { id, movie_id, movie_title, movie_poster, movie_backdrop, movie_type, movie_genre, movie_release_date, movie_original_language, movie_overview, movie_vote, movie_vote_count, movie_watching_status, movie_personal_vote, movie_personal_overview, movie_time_created, movie_time_updated, movie_permanent } = movie;
                 const image = movie_poster || movie_backdrop;
                 const title = movie_title || "Unknown Title";
                 %>
-                <div class="movie-card <% if(movie.movie_permanent === "NO") { %> temporary <% } %>">
-                    <a href="/movie/<%= id %>" class="movie-link">
-                        <img class="movie-image" src="<%= image %>" alt="<%= title %>">
-                        <h2 class="movie-title"><%= title %></h2>
-                        <h2><%=id%></h2>
+                <div class="movie-card">
+                    
 
-                        <button class="edit-movie">
-                            <a href="/edit/<%= id %>" class="edit-link">Edit</a>
-                        </button>
-                        <form action="/movie/<%= id %>/delete" method="POST" class="delete-form">
-                            <button type="submit" class="delete-movie">Delete</button>
-                        </form>
+                    <button class="actions-button">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/></svg>
+                    </button>
+                    <div class="actions-menu close-menu">
+                            <a href="/edit/<%= id %>" class="edit-link">
+                                <button class="edit-movie-btn action-btn">
+                                    Edit
+                                </button>
+                            </a>
+                            <form action="/movie/<%= id %>/delete" method="POST">
+                                <button type="submit" class="delete-movie-btn action-btn">Delete</button>
+                            </form>
+                        </div>
+                    <a href="/movie/<%= id %>" class="movie-link">
+                        <div class="movie-image-container">
+                            <% if (movie.movie_watching_status === "Whatching") { %>
+                        <div class="whatching-badge status-badge">
+                            <p>Watching</p>
+                        </div>
+                    <% } else if (movie.movie_watching_status === "Completed") { %>
+                        <div class="completed-badge status-badge">
+                            <p>Completed</p>
+                        </div>
+                        <% } else if (movie.movie_watching_status === "Plan to Watch") { %>
+                        <div class="plan-to-watch-badge status-badge">
+                            <p>Plan to Watch</p>
+                        </div>
+                    <% } else if (movie.movie_watching_status === "On Hold") { %>
+                        <div class="on-hold-badge status-badge">
+                            <p>On Hold</p>
+                        </div>
+                    <% } else if (movie.movie_watching_status === "Dropped") { %>
+                        <div class="dropped-badge status-badge">
+                            <p>Dropped</p>
+                        </div>
+                    <% } %>
+                        <% if (movie.movie_permanent === "NO") { %>
+                        <div class="temporary-badge">
+                            <p>⏳</p>
+                        </div>
+                        <% } %>
+                        <% if (image !== "https://image.tmdb.org/t/p/w500null"){ %>
+                            <img class="movie-image" src="<%= image %>" alt="<%= title %>">
+                        <% } else { %>
+                            <img class="movie-image" src="/images/placeholder-image.png" alt="No Image Available">
+                        <% } %>
+                        </div>
+                        <h2 class="movie-title"><%= title %></h2>
                     </a>
                 </div>
             <%  }); %>
-        <% } else { %>
-            <p class="no-movies">No movies found.</p>
         <% } %>
+    </div>
+
+        <div class="pagination">
+            
+        </div>
     </div>
 
     <% if (locals.success) { %>
@@ -131,7 +196,16 @@
         </div>
     <% } %>
 
+    
+    <div class="datas">
+        <div id="data-container" data-totalPages="<%= totalPages %>"></div>
+        <div id="all-movies" data-movies="<%= JSON.stringify(allMovies) %>"></div>
+    </div>
+    <script src="/function/search_2.js"></script>
+    <script src="/function/pagination.js"></script>
     <script src="/function/index.js"></script>
     <script src="/function/messages.js"></script>
+    <script src="/function/header_animation.js"></script>
+    <%- include('partials/live.ejs') %>
 </body>
 </html>

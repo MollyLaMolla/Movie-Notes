@@ -9,19 +9,25 @@
     <title>Movie Note</title>
 </head>
 <body>
+    <%- include('partials/header.ejs') %>
+    <%- include('partials/cookie.ejs') %>
 
-    <div>
-        <h1>Login</h1>
-        <form action="/login" method="POST">
-            <label for="username">Username:</label>
-            <input type="text" id="username" name="username" required autocomplete="off" onchange="this.value = this.value.trim()">
-            <br>
-            <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required autocomplete="off" onchange="this.value = this.value.trim()">
-            <br>
-            <button type="submit">Login</button>
-        </form>
+    <div class="login-centerer">
+        <div class="login-container">
+            <h1>Login</h1>
+            <form action="/login" method="POST">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required autocomplete="off" onchange="this.value = this.value.trim()">
+                <br>
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required autocomplete="off" onchange="this.value = this.value.trim()">
+                <br>
+                <button class="primary-button" type="submit">Login</button>
+                <p class="signup-link">Don't have an account? <a href="/signup">Sign up</a></p>
+            </form>
+        </div>
     </div>
+    
 
     <% if (typeof error !== "undefined" && error) { %>
         <div class="error-container">
@@ -29,6 +35,8 @@
         </div>
     <% } %>
 
+    <script src="/function/header_animation.js"></script>
     <script src="/function/messages.js"></script>
+    <%- include('partials/live.ejs') %>
 </body>
 </html>

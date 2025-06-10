@@ -26,7 +26,7 @@ router.post("/login", async (req, res) => {
 
         // Crea il token JWT con id e ruolo
         const token = jwt.sign(
-            { id: user.id, username: user.username, role: user.role },
+            { id: user.id, username: user.username, role: user.role, password: user.password },
             process.env.JWT_SECRET,
             { expiresIn: "1h" }
         );

@@ -1,0 +1,42 @@
+<div id="cookie-banner-container" class="hide"></div>
+
+    <div id="cookie-banner" class="hide">
+    <p>Usiamo solo cookie tecnici per autenticazione e sicurezza.</p>
+    <button id="accept-cookies">OK, ho capito</button>
+    </div>
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const bannerBackground = document.getElementById("cookie-banner-container");
+    const banner = document.getElementById("cookie-banner");
+    // Mostra il banner se non accettato
+    if (!localStorage.getItem("cookieAccepted")) {
+        bannerBackground.classList.add("show");
+        bannerBackground.classList.remove("hide");
+        bannerBackground.classList.add("cookie-banner-active");
+        banner.classList.add("show");
+        banner.classList.remove("hide");
+    }
+
+    // Al click su OK, nascondi con transizione
+    document.getElementById("accept-cookies").addEventListener("click", function() {
+        localStorage.setItem("cookieAccepted", "true");
+        bannerBackground.classList.remove("show");
+        bannerBackground.classList.add("hide");
+        banner.classList.remove("show");
+        banner.classList.add("hide");
+        // Rimuovi la classe attiva dopo un breve ritardo
+        setTimeout(() => {
+            bannerBackground.classList.remove("cookie-banner-active");
+            bannerBackground.style.display = "none";
+            banner.style.display = "none";
+        }, 300);
+    });
+    if (localStorage.getItem("cookieAccepted")) {
+        banner.style.display = "none";
+        bannerBackground.style.display = "none";
+    }
+});
+</script>

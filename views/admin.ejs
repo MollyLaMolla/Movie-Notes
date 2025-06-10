@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <%- include('partials/text_font.ejs') %>
+    <link rel="stylesheet" href="style/style.css">
+    <title>Movie Notes</title>
+</head>
+
+<body>
+
+    <%- include('partials/header.ejs') %>
+    <%- include('partials/cookie.ejs') %>
+        
+<% if (user) { %>
+    <% if (user.role === "admin") { %>
+        <div class="status-admin status">
+            <p>Modifiche permanenti ✅</p>
+        </div>
+    <% } else { %>
+        <div class="status-user status">
+            <p>Modifiche temporanee ⏳</p>
+        </div>
+    <% } %>
+<% } %>
+
+    <div class="admin-container-centerer">
+        <div class="admin-container">
+            <h1>Admin Panel</h1>
+            <div class="users-list">
+                <h2>Users List</h2>
+                <ul class="users-list-ul">
+                    <% users.forEach(user => { %>
+                        <% if (user.role !== "admin") { %>
+                            <li class="user-item">
+                                <p><%= user.username %></p>
+                                    <form action="/makeAdmin" method="POST" class="admin-form">
+                                        <input type="hidden" name="userId" value="<%= user.id %>">
+                                        <% if (user.username !== "user") { %>
+                                            <button type="submit" class="make-admin-btn">Make Admin</button>
+                                        <% } else { %>
+                                            <button type="button" class="make-admin-btn disabled-btn" disabled>Make Admin</button>
+                                        <% } %>
+                                    </form>
+                            </li>
+                        <% } %>
+                    <% }) %>
+                </ul>
+            </div>
+            <div class="admins-list">
+                <h2>Admins List</h2>
+                <ul class="admins-list-ul">
+                    <% users.forEach(user => { %>
+                        <% if (user.role === "admin") { %>
+                            <li class="admin-item">
+                                <p><%= user.username %></p>
+                                <form action="/removeAdmin" method="POST" class="admin-form">
+                                    <input type="hidden" name="userId" value="<%= user.id %>">
+                                    <% if (user.username !== currentUser.username && user.username !== "molly") { %>
+                                        <button type="submit" class="remove-admin-btn">Remove Admin</button>
+                                    <% } else { %>
+                                        <button type="button" class="remove-admin-btn disabled-btn" disabled>Remove Admin</button>
+                                    <% } %>
+                                </form>
+                            </li>
+                        <% } %>
+                    <% }) %>
+                </ul>
+            </div>
+            <div class="admin-buttons">
+                <form action="/updateTemp" method="POST">
+                    <button class="update-temp-btn update-btn" type="submit">Update temp Movies</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    
+    <% if (locals.success) { %>
+        <div class="success-container">
+            <p id="success-message" class="success-message"><%= success %></p>
+        </div>
+    <% } %>
+
+    <% if (locals.error) { %>
+        <div class="error-container">
+            <p id="error-message" class="error-message"><%= error %></p>
+        </div>
+    <% } %>
+
+    <script src="/function/header_animation.js"></script>
+    <script src="/function/messages.js"></script>
+    <%- include('partials/live.ejs') %>
+</body>
+</html>

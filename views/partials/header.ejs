@@ -1,0 +1,90 @@
+<div class="header">
+    <div class="logo">
+        <a href="/">
+            <img src="/images/logo.png" alt="Movie Note Logo" />
+            <h1 id="logo-title">Movie Notes</h1>
+        </a>
+    </div>
+    <nav class="navbar <%if (user.role === "admin") { %> admin <% } %>">
+        <div class="container-fluid">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30">
+                    <path fill="currentColor" d="M4 7h22v2H4V7zm0 6h22v2H4v-2zm0 6h22v2H4v-2z"/>
+                </svg>
+        </button>
+        </div>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <% if (user.username === "user") { %>
+            <div id="login">
+                <a href="/login" class="login nav">
+                    <button class="primary-button">Login</button>
+                </a>
+            </div>
+            <div id="signup">
+                <a href="/signup" class="signup nav">
+                    <button class="secondary-button">Sign Up</button>
+                </a>
+            </div>
+            <% } %>
+             <% if (user.username !== "user") { %>
+                <div id="account">
+                    <a href="/account" class="user-account-link nav">
+                        <button class="primary-button">Account</button>
+                    </a>
+                </div>
+            <% if (user.role === "admin") { %>
+                <div id="admin">
+                    <a href="/admin" class="admmin nav">
+                        <button class="secondary-button nav">Admin</button>
+                    </a>
+                </div>
+            <% } %>
+            <div id="logout">
+                <form action="/logout" method="POST">
+                    <button type="submit" class="logout primary-button nav">Logout</button>
+                </form>
+            </div>
+        <% } %>
+        </div>
+    </nav>
+    <div class="log">
+        <% if (user.username === "user") { %>
+            <div id="login">
+                <a href="/login" class="login">
+                    <button class="primary-button">Login</button>
+                </a>
+            </div>
+            <div id="signup">
+                <a href="/signup" class="signup">
+                    <button class="secondary-button">Sign Up</button>
+                </a>
+            </div>
+        <% } %>
+        <% if (user.username !== "user") { %>
+            <a href="/account" class="user-account-link gradiant-link">
+                <div id="user-div">
+                    <div class="inner-div">
+                        <p>
+                            Hello <span class="user-name-span"><%= user.username %>!</span>
+                        </p>
+                    </div>
+                </div>
+            </a>
+            <div id="logout">
+                <form action="/logout" method="POST">
+                    <button type="submit" class="logout primary-button">Logout</button>
+                </form>
+            </div>
+            <% if (user.role === "admin") { %>
+                <div id="admin">
+                    <a href="/admin" class="admmin">
+                        <button class="secondary-button">Admin</button>
+                    </a>
+                </div>
+            <% } %>
+        <% } %>
+    </div>
+</div>
+<div class="header-animation"></div>
+
+<script src="../function/navbar.js"></script>

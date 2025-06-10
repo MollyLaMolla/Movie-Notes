@@ -10,11 +10,15 @@
 </head>
 
 <body>
+    <%- include('partials/header.ejs') %>
+    <%- include('partials/cookie.ejs') %>
     <% if (locals.movie) { %>
-        <%console.log(movie) %>
+    <div class="new-movie-centerer">
+    <div class="search-container">
     <div id="movie-selected">
         <img class="movie-small-image selected-img" src="<%= movie.movie_backdrop %>" alt="<%= movie.movie_title %>">
         <p class="movie-small-title selected-title"><%= movie.movie_title %></p>
+    </div>
     </div>
 
     <div id="movie-data">
@@ -32,8 +36,7 @@
                     Vote: 
                     <span id="vote-avg-num"><%= movie.movie_vote %></span>
                     <span id="vote-avg">/10</span>
-                    <span id="stars"><span id="full-stars"></span><span id="half-stars"></span><span id="empty-stars"></span></span>
-                    <span id="vote-count"><%= movie.movie_vote_count %></span>
+                    <span id="stars"><span id="full-stars"></span><span id="half-stars"></span><span id="empty-stars"></span><span id="vote-count">(<%= movie.movie_vote_count %>)</span></span>
                 </h2>
             </div>
         </div>
@@ -43,28 +46,33 @@
         </div>
     </div>
 
-    <div class="watch">
+    <div class="whatch">
+        <div class="whatching-status-info">
+            <h2>Select the whatching status of the movie:</h2>
+            <p>you can change it later.</p>
+            <p class="whatching-instructions">Click on the radio button to select the status you want.</p>
+        </div>
+        <div class="whatching-status-container">
         <div class="completed">
-            <input type="radio" id="completed" name="watching-status" value="completed" <% if (movie.movie_watching_status === 'Completed') { %>
-                 checked
-                  <% } %>>
+            <input type="radio" id="completed" name="watching-status" value="Completed" <% if (movie.movie_watching_status === 'Completed') { %> checked <% } %> style="display: none">
             <label for="completed">Completed</label>
         </div>
         <div class="whatching">
-            <input type="radio" id="whatching" name="watching-status" value="whatching" <% if (movie.movie_watching_status === 'Whatching') { %> checked <% } %>>
+            <input type="radio" id="whatching" name="watching-status" value="Whatching" <% if (movie.movie_watching_status === 'Whatching') { %> checked <% } %> style="display: none">
             <label for="whatching">Watching</label>
         </div>
         <div class="future-watch">
-            <input type="radio" id="future-watch" name="watching-status" value="future-watch" <% if (movie.movie_watching_status === 'Plan to Watch') { %> checked <% } %>>
+            <input type="radio" id="future-watch" name="watching-status" value="Plan to Watch" <% if (movie.movie_watching_status === 'Plan to Watch') { %> checked <% } %> style="display: none">
             <label for="future-watch">Would like to Watch</label>
         </div>
         <div class="on-hold">
-            <input type="radio" id="on-hold" name="watching-status" value="on-hold" <% if (movie.movie_watching_status === 'On Hold') { %> checked <% } %>>
+            <input type="radio" id="on-hold" name="watching-status" value="On Hold" <% if (movie.movie_watching_status === 'On Hold') { %> checked <% } %> style="display: none">
             <label for="on-hold">On Hold</label>
         </div>
         <div class="dropped">
-            <input type="radio" id="dropped" name="watching-status" value="dropped" <% if (movie.movie_watching_status === 'Dropped') { %> checked <% } %>>
+            <input type="radio" id="dropped" name="watching-status" value="Dropped" <% if (movie.movie_watching_status === 'Dropped') { %> checked <% } %> style="display: none">
             <label for="dropped">Dropped</label>
+        </div>
         </div>
     </div>
 
@@ -73,14 +81,13 @@
             <h2>Your vote:</h2>
             <p id="personal-vote-text">Rate the movie from 0 to 10</p>
             <p id="personal-vote-text-3">You can use decimals (e.g. 7.5)</p>
-            <input type="number" id="personal-vote" name="personal-vote" min="0" max="10" step="0.1" required value="<%= movie.movie_personal_vote %>">
+            <input type="number" id="personal-vote" name="personal-vote" min="0" max="10" step="0.1" required value="<% if (movie.movie_watching_status === 'Completed') { %><%= movie.movie_personal_vote %><% } else { %>0<% } %>">
         </div>
         <div class="personal-overview-container">
             <h2>Your overview:</h2>
-            <textarea id="personal-overview" name="personal-overview" rows="4" cols="50" ><%= movie.movie_personal_overview %></textarea>
+            <textarea id="personal-overview" name="personal-overview" rows="4" cols="50" ><% if (movie.movie_watching_status === 'Completed') { %><%= movie.movie_personal_overview %><% } %></textarea>
         </div>
     </div>
-
     <div class="form-container">
         <form id="movie-form" action="/edit/<%= movie.id %>" method="POST">
             <input type="hidden" id="movie-id" name="movieId" value="<%= movie.movie_id %>">
@@ -93,13 +100,14 @@
             <input type="hidden" id="movie-overview" name="movieOverview" value="<%= movie.movie_overview %>">
             <input type="hidden" id="movie-vote-avg" name="movieVote" value="<%= movie.movie_vote %>">
             <input type="hidden" id="movie-vote-count" name="movieVoteCount" value="<%= movie.movie_vote_count %>">
-            <input type="hidden" id="movie-watching-status" name="movieWatchingStatus" value="<%= movie.movie_watching_status %>">
-            <input type="hidden" id="movie-personal-vote" name="moviePersonalVote" value="<%= movie.movie_personal_vote %>">
-            <input type="hidden" id="movie-personal-overview" name="moviePersonalOverview" value="<%= movie.movie_personal_overview %>">
+            <input type="hidden" id="movie-watching-status" name="movieWatchingStatus" value="">
+            <input type="hidden" id="movie-personal-vote" name="moviePersonalVote" value="">
+            <input type="hidden" id="movie-personal-overview" name="moviePersonalOverview" value="">
         </form>
     </div>
     <div class="button-container">
         <button id="submit-button">Submit</button>
+    </div>
     </div>
     <% } %>
 
@@ -109,7 +117,10 @@
         </div>
     <% } %>
    
+
+    <script src="/function/header_animation.js"></script>
     <script src="/function/newMovie.js"></script>
     <script src="/function/messages.js"></script>
+    <%- include('partials/live.ejs') %>
 </body>
 </html>

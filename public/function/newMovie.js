@@ -6,9 +6,7 @@ const formVote = document.getElementById("movie-personal-vote");
 const formOverviewText = document.getElementById("movie-personal-overview");
 const formWatchingStatus = document.getElementById("movie-watching-status");
 
-if ($('#completed').is(':checked')) {
-    $('.movie-personal-overview').removeClass('no-display');
-}
+
 
 document.getElementById("completed").addEventListener("change", (event) => {
     let isChecked = event.target.checked;
@@ -102,3 +100,115 @@ function createStars(vote) {
 }
 
 createStars(document.getElementById('vote-avg-num').textContent);
+
+
+// funztions to change the labels of the radio buttons instead of the default ones
+
+const completedLabel = document.getElementsByClassName("completed")[0];
+const watchingLabel = document.getElementsByClassName("whatching")[0];
+const futureWatchLabel = document.getElementsByClassName("future-watch")[0];
+const onHoldLabel = document.getElementsByClassName("on-hold")[0];
+const droppedLabel = document.getElementsByClassName("dropped")[0];
+
+const completedInput = document.getElementById("completed");
+const watchingInput = document.getElementById("whatching");
+const futureWatchInput = document.getElementById("future-watch");
+const onHoldInput = document.getElementById("on-hold");
+const droppedInput = document.getElementById("dropped");
+completedLabel.addEventListener("click", () => {
+    if (completedInput.checked) {
+        return; // Se il checkbox è già selezionato, non fare nulla
+    }
+    completedInput.checked = true;
+    
+    document.getElementsByClassName("movie-personal-overview")[0].classList.remove("no-display");
+    document.getElementsByClassName("button-container")[0].classList.remove("no-display");
+    completedLabel.classList.add("active");
+    // rimuori active class from all labels
+    watchingLabel.classList.remove("active");
+    futureWatchLabel.classList.remove("active");
+    onHoldLabel.classList.remove("active");
+    droppedLabel.classList.remove("active");
+    window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: 'smooth'
+    });
+});
+watchingLabel.addEventListener("click", () => {
+    if (watchingInput.checked) {
+        return; // Se il checkbox è già selezionato, non fare nulla
+    }
+    watchingInput.checked = true;
+    document.getElementsByClassName("movie-personal-overview")[0].classList.add("no-display");
+    document.getElementsByClassName("button-container")[0].classList.remove("no-display");
+    watchingLabel.classList.add("active");
+    // rimuori active class from all labels
+    completedLabel.classList.remove("active");
+    futureWatchLabel.classList.remove("active");
+    onHoldLabel.classList.remove("active");
+    droppedLabel.classList.remove("active");
+});
+futureWatchLabel.addEventListener("click", () => {
+    if (futureWatchInput.checked) {
+        return; // Se il checkbox è già selezionato, non fare nulla
+    }
+    futureWatchInput.checked = true;
+    document.getElementsByClassName("movie-personal-overview")[0].classList.add("no-display");
+    document.getElementsByClassName("button-container")[0].classList.remove("no-display");
+    futureWatchLabel.classList.add("active");
+    // rimuori active class from all labels
+    completedLabel.classList.remove("active");
+    watchingLabel.classList.remove("active");
+    onHoldLabel.classList.remove("active");
+    droppedLabel.classList.remove("active");
+});
+onHoldLabel.addEventListener("click", () => {
+    if (onHoldInput.checked) {
+        return; // Se il checkbox è già selezionato, non fare nulla
+    }
+    onHoldInput.checked = true;
+    document.getElementsByClassName("movie-personal-overview")[0].classList.add("no-display");
+    document.getElementsByClassName("button-container")[0].classList.remove("no-display");
+    onHoldLabel.classList.add("active");
+    // rimuori active class from all labels
+    completedLabel.classList.remove("active");
+    watchingLabel.classList.remove("active");
+    futureWatchLabel.classList.remove("active");
+    droppedLabel.classList.remove("active");
+});
+droppedLabel.addEventListener("click", () => {
+    if (droppedInput.checked) {
+        return; // Se il checkbox è già selezionato, non fare nulla
+    }
+    droppedInput.checked = true;
+    document.getElementsByClassName("movie-personal-overview")[0].classList.add("no-display");
+    document.getElementsByClassName("button-container")[0].classList.remove("no-display");
+    droppedLabel.classList.add("active");
+    // rimuori active class from all labels
+    completedLabel.classList.remove("active");
+    watchingLabel.classList.remove("active");
+    futureWatchLabel.classList.remove("active");
+    onHoldLabel.classList.remove("active");
+});
+
+if (completedInput.checked) {
+    completedLabel.classList.add("active");
+    document.getElementsByClassName("movie-personal-overview")[0].classList.remove("no-display");
+    document.getElementsByClassName("button-container")[0].classList.remove("no-display");
+}
+
+if (watchingInput.checked) {
+    watchingLabel.classList.add("active");
+}
+
+if (futureWatchInput.checked) {
+    futureWatchLabel.classList.add("active");
+}
+
+if (onHoldInput.checked) {
+    onHoldLabel.classList.add("active");
+}
+
+if (droppedInput.checked) {
+    droppedLabel.classList.add("active");
+}

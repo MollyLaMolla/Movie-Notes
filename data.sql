@@ -21,7 +21,7 @@ CREATE TABLE movies (
     movie_personal_overview TEXT DEFAULT '',
     movie_time_created TIMESTAMP DEFAULT NOW(),
     movie_time_updated TIMESTAMP DEFAULT NOW(),
-    movie_permanent TEXT DEFAULT 'YES',
+    movie_permanent TEXT DEFAULT 'YES'
 );
 
 -- INSERT THE 4 DEFAULT MOVIES
