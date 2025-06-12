@@ -8,3 +8,5 @@ coverage
 backup_db.dump
 *.env
 data.sql
+# all console logs
+console.log

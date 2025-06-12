@@ -197,9 +197,6 @@ cron.schedule("*/15 * * * *", async () => {
     );
     await db.query("INSERT INTO cron_log (id, last_run) VALUES (1, NOW()) ON CONFLICT (id) DO UPDATE SET last_run = NOW()");
     console.log("Tabella temp_movies aggiornata!");
-    // ricarica la pagina
-    liveReloadServer.refresh("/");
-    console.log("Pagina ricaricata!");
 });
 
 // Middleware per rendere disponibile l'utente in tutte le route
