@@ -10,3 +10,4 @@ backup_db.dump
 data.sql
 # all console logs
 console.log
+db.js

@@ -323,13 +323,13 @@ function updateTimeReset() {
         minutesLeft += 1;
         secondsLeft = 0; // I secondi sono ora 0
     }
-    if (minutesLeft === 0 && secondsLeft === 0) {
-        // refresh the page if the time is 0
-        window.location.reload();
-        return;
-    }
     // Aggiorna il contenuto del timeReset
     timeReset.textContent = `${String(minutesLeft).padStart(2, '0')}:${String(secondsLeft).padStart(2, '0')}`;
+
+    if (minutesLeft === 15 && secondsLeft === 0) {
+        // refresh the page if the time is 0
+        window.location.reload();
+    }
 }
 updateTimeReset(); // Inizializza il timeReset al caricamento della pagina
 
