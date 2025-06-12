@@ -316,22 +316,12 @@ function updateTimeReset() {
     const currentMinute = now.getMinutes();
     const currentSecond = now.getSeconds();
     // il reset avviene ogni 15 minuti
-    let minutesLeft = 15 - currentMinute % 15;
+    let minutesLeft = 15 - currentMinute % 15 - 1; // Sottrai 1 per considerare il minuto corrente
     let secondsLeft = 60 - currentSecond;
     if (secondsLeft === 60) {
         // Se i secondi sono 60, significa che il minuto è completo, quindi decrementa i minuti
         minutesLeft += 1;
         secondsLeft = 0; // I secondi sono ora 0
-    }
-    if (minutesLeft === 15 && secondsLeft === 0) {
-        // Se il tempo è esattamente 15 minuti, significa che il reset è imminente
-        minutesLeft = 0;
-        secondsLeft = 0;
-    }
-    // Se i minuti sono 0 e i secondi sono 0, significa che il reset è avvenuto
-    if (minutesLeft < 0 || (minutesLeft === 0 && secondsLeft < 0)) {
-        minutesLeft = 0;
-        secondsLeft = 0;
     }
     // Aggiorna il contenuto del timeReset
     timeReset.textContent = `${String(minutesLeft).padStart(2, '0')}:${String(secondsLeft).padStart(2, '0')}`;
