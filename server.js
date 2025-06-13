@@ -24,13 +24,13 @@ app.use((req, res, next) => {
     if (!req.cookies.token) {
         const token = jwt.sign({ username: "user", role: "user" }, process.env.JWT_SECRET, { expiresIn: "1h" });
         res.cookie("token", token, { httpOnly: true, maxAge: 3600000 });
-        console.log("Token aggiunto ai cookie:", token);
+        // console.log("Token aggiunto ai cookie:", token);
     }
     // Controlla se l'utente è autenticato
     if (req.cookies.token) {
         try {
             const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
-            console.log("Utente autenticato:", decoded);
+            // console.log("Utente autenticato:", decoded);
         } catch (error) {
             console.warn("Token non valido:", error.message);
             res.clearCookie("token");
