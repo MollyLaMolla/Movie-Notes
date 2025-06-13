@@ -325,11 +325,6 @@ function updateTimeReset() {
     }
     // Aggiorna il contenuto del timeReset
     timeReset.textContent = `${String(minutesLeft).padStart(2, '0')}:${String(secondsLeft).padStart(2, '0')}`;
-
-    if (minutesLeft === 15 && secondsLeft === 0) {
-        // refresh the page if the time is 0
-        window.location.reload();
-    }
 }
 updateTimeReset(); // Inizializza il timeReset al caricamento della pagina
 
@@ -353,6 +348,18 @@ document.addEventListener('click', (event) => {
         statusInfo.classList.remove('show');
     }
 });
+
+const socket = io(); // Assicura che sia definito correttamente
+
+socket.on("connect", () => {
+    console.log("✅ Connesso al server con ID:", socket.id);
+});
+
+socket.on("reload", () => {
+    console.log("🔄 Ricevuto segnale di aggiornamento! Ricarico la pagina...");
+    window.location.reload();
+});
+
 
 
 
