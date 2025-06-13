@@ -6,22 +6,13 @@ import cron from "node-cron";
 import axios from "axios";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
-import cors from "cors";
+import connectLivereload from "connect-livereload";
 
 
-
-
-// import livereload from "livereload";
-// import connectLivereload from "connect-livereload";
-
-
-// const liveReloadServer = livereload.createServer();
-// liveReloadServer.watch([path.join(__dirname, "public"), path.join(__dirname, "views")]);
 const app = express();
-const port = process.env.PORT || 3000;
-app.use(cors());
+const port = 3000;
 
-// app.use(connectLivereload());
+app.use(connectLivereload());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static("public"));
@@ -30,32 +21,14 @@ app.set("views", "views");
 app.use("/auth", authRoutes);
 app.use(cookieParser());
 
-
-
 app.use((req, res, next) => {
-    const token = req.cookies.token;
-    if (token) {
-        try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            res.locals.user = decoded;
-        } catch (error) {
-            // Qui gestisci TUTTI gli errori di verifica, anche token scaduto
-            res.locals.user = {
-                role: "user", // Imposta un ruolo di default
-                id: 2, // Imposta un ID di default
-                username: "user", // Imposta un nome utente di default
-                password: "1234", // Imposta una password di default
-            }
-            // Non lanciare errori, logga solo se vuoi
-            // console.warn("Token non valido:", error.message);
-        }
-    } else {
-        res.locals.user = {
-            role: "user", // Imposta un ruolo di default
-            id: 2, // Imposta un ID di default
-            username: "user", // Imposta un nome utente di default
-            password: "1234", // Imposta una password di default
-        };
+    res.locals.user = req.user || null; // Se `req.user` non esiste, assegna `null`
+    console.log("Middleware: Utente autenticato:", res.locals.user);
+    // Aggiungi il token ai cookie se non esiste
+    if (!req.cookies.token) {
+        const token = jwt.sign({ username: "user", role: "user" }, process.env.JWT_SECRET, { expiresIn: "1h" });
+        res.cookie("token", token, { httpOnly: true, maxAge: 3600000 });
+        console.log("Token aggiunto ai cookie:", token);
     }
     next();
 });
@@ -228,7 +201,7 @@ app.use((req, res, next) => {
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             res.locals.user = decoded;
-            //console.log("Utente autenticato:", decoded);
+            console.log("Utente autenticato:", decoded);
         } catch (error) {
             console.warn("Token non valido:", error.message);
             res.locals.user = null;
@@ -247,17 +220,17 @@ app.get("/", (req, res) => {
 // Home page
 app.get("/movies/:page", async (req, res) => {
     const search = req.query.search || "";
-    //console.log("Query params:", req.query);
-    //console.log("Search query:", search);
+    console.log("Query params:", req.query);
+    console.log("Search query:", search);
     // se search non è vuoto, cerca i film
     const { error, success, totalPages } = req.cookies;
-    //console.log("Cookies:", req.cookies);
+    console.log("Cookies:", req.cookies);
     const page = req.params.page || 1;
     const { type, movieGenres, tvGenres, whatchingStatus, sort, order } = req.query;
-    //console.log(type, movieGenres, tvGenres, whatchingStatus, sort, order);
-    //console.log(req.query);
-    //console.log("Page:", page);
-    //console.log(`page è un numero: ${isNaN(page) || page <= 0 ? "No" : "Yes"}`);
+    console.log(type, movieGenres, tvGenres, whatchingStatus, sort, order);
+    console.log(req.query);
+    console.log("Page:", page);
+    console.log(`page è un numero: ${isNaN(page) || page <= 0 ? "No" : "Yes"}`);
     // modifica l'header della pagina se page non è un numero
     if (isNaN(page) || page < 0) {
         res.cookie("error", "Pagina non valida, reindirizzamento alla pagina 1", { maxAge: 5000, httpOnly: false });
@@ -273,7 +246,7 @@ app.get("/movies/:page", async (req, res) => {
         res.clearCookie("totalPages");
     }
     
-    //console.log("Query params:", req.query);
+    console.log("Query params:", req.query);
     try {
         let token = req.cookies.token;
         // Se non c'è token, genera token base
@@ -284,13 +257,13 @@ app.get("/movies/:page", async (req, res) => {
             });
             token = response.data.token;
             // Imposta il token nei cookie
-            //console.log("Token generato:", token);
+            console.log("Token generato:", token);
             res.cookie("token", token, { httpOnly: true, maxAge: 3600000 });
         }
         // Usa il token per ottenere i film
         if (res.locals.user === null) {
             res.locals.user = jwt.verify(token, process.env.JWT_SECRET);
-            //console.log("Utente autenticato:", res.locals.user);
+            console.log("Utente autenticato:", res.locals.user);
         }
         const moviesResponse = await getAllMovies();
         const moviesForSearch = moviesResponse.map((movie) => ({
@@ -309,21 +282,21 @@ app.get("/movies/:page", async (req, res) => {
         // aggiungi il numero totale di pagine ai cookie
         const totalPages = Math.ceil(filteredMovies.length / cardsPerPage);
         if (page > totalPages) {
-            //console.log("Page is greater than total pages, redirecting to last page");
+            console.log("Page is greater than total pages, redirecting to last page");
             return res.redirect(`/movies/${totalPages}?type=${type || "all"}&movieGenres=${movieGenres || "all"}&tvGenres=${tvGenres || "all"}&whatchingStatus=${whatchingStatus || "all"}&sort=${sort || "time_updated"}&order=${order || "asc"}`);
         }
-        //console.log(`Total pages: ${totalPages}`);
-        //console.log(`page: ${page}`);
-        //console.log(`is page 0: ${page == 0}`);
-        //console.log(`is total pages > 0: ${totalPages > 0}`);
+        console.log(`Total pages: ${totalPages}`);
+        console.log(`page: ${page}`);
+        console.log(`is page 0: ${page == 0}`);
+        console.log(`is total pages > 0: ${totalPages > 0}`);
         // Se la pagina è 0 e il numero totale di pagine è maggiore non è 0, reindirizza alla pagina 1
         const isPageZero = page == 0;
         if (isPageZero && totalPages > 0) {
-            //console.log("Page is 0, redirecting to page 1");
+            console.log("Page is 0, redirecting to page 1");
             res.cookie("error", "Pagina non valida, reindirizzamento alla pagina 1", { maxAge: 5000, httpOnly: false });
             return res.redirect(`/movies/1?type=${type || "all"}&movieGenres=${movieGenres || "all"}&tvGenres=${tvGenres || "all"}&whatchingStatus=${whatchingStatus || "all"}&sort=${sort || "time_updated"}&order=${order || "asc"}`);
         }   
-            //console.log("Rendering index.ejs with movies");
+            console.log("Rendering index.ejs with movies");
             res.render("index.ejs", {
                 movies: filteredMovies.slice((page - 1) * cardsPerPage, page * cardsPerPage),
                 currentPage: page,
@@ -547,7 +520,7 @@ app.get("/new", async (req, res) => {
 
 // Aggiunta film
 app.post("/new", async (req, res) => {
-    //console.log(req.body);
+    console.log(req.body);
     let query;
     let values;
     const { movieId, movieTitle, movieBackdrop, movieType, movieGenre, movieReleaseDate, movieOriginalLanguage, movieOverview, movieVote, movieVoteCount, movieWatchingStatus, moviePersonalVote, moviePersonalOverview } = req.body;
@@ -589,7 +562,7 @@ app.post("/new", async (req, res) => {
 
     try {
         await db.query(query, values);
-        //console.log("Movie added to database");
+        console.log("Movie added to database");
     } catch (err) {
         console.error("Error adding movie to database", err);
     }
@@ -640,12 +613,12 @@ app.get("/edit/:id", async (req, res) => {
 app.post("/edit/:id", async (req, res) => {
     const { id } = req.params;
     const { movieTitle, movieBackdrop, movieType, movieGenre, movieReleaseDate, movieOriginalLanguage, movieOverview, movieVote, movieVoteCount, movieWatchingStatus, moviePersonalVote, moviePersonalOverview } = req.body;
-    //console.log(req.body);
+    console.log(req.body);
 
     if (res.locals.user?.role !== "admin"){
         try {
             await db.query("UPDATE temp_movies SET movie_title = $1, movie_backdrop = $2, movie_type = $3, movie_genre = $4, movie_release_date = $5, movie_original_language = $6, movie_overview = $7, movie_vote = CAST($8 AS REAL), movie_vote_count = CAST($9 AS INTEGER), movie_watching_status = $10, movie_personal_vote = CAST($11 AS REAL), movie_personal_overview = $12, movie_permanent = $13, movie_time_updated = NOW() WHERE id = $14", [movieTitle, movieBackdrop, movieType, movieGenre, movieReleaseDate, movieOriginalLanguage, movieOverview, parseFloat(movieVote), parseInt(movieVoteCount), (movieWatchingStatus || ""), parseFloat(moviePersonalVote), (moviePersonalOverview || ""), "NO", id]);
-            //console.log("Movie updated in temp_movies");
+            console.log("Movie updated in temp_movies");
             res.cookie("success", "Film aggiornato con successo!", { maxAge: 5000, httpOnly: false });
         } catch (error) {
             console.error("Errore:", error);
@@ -660,15 +633,15 @@ app.post("/edit/:id", async (req, res) => {
             // is the movie permanent?
             const result = await db.query("SELECT * FROM temp_movies WHERE id = $1", [id]);
             const movie = result.rows[0];
-            //console.log("Movie:", movie);
+            console.log("Movie:", movie);
             if (movie.movie_permanent == "YES") {
                 await db.query("UPDATE movies SET movie_title = $1, movie_backdrop = $2, movie_type = $3, movie_genre = $4, movie_release_date = $5, movie_original_language = $6, movie_overview = $7, movie_vote = CAST($8 AS REAL), movie_vote_count = CAST($9 AS INTEGER), movie_watching_status = $10, movie_personal_vote = CAST($11 AS REAL), movie_personal_overview = $12, movie_permanent = $13, movie_time_updated = NOW() WHERE id = $14", [movieTitle, movieBackdrop, movieType, movieGenre, movieReleaseDate, movieOriginalLanguage, movieOverview, parseFloat(movieVote), parseInt(movieVoteCount), (movieWatchingStatus || ""), parseFloat(moviePersonalVote), (moviePersonalOverview || ""), "YES", id]);
                 await db.query("UPDATE temp_movies SET movie_title = $1, movie_backdrop = $2, movie_type = $3, movie_genre = $4, movie_release_date = $5, movie_original_language = $6, movie_overview = $7, movie_vote = CAST($8 AS REAL), movie_vote_count = CAST($9 AS INTEGER), movie_watching_status = $10, movie_personal_vote = CAST($11 AS REAL), movie_personal_overview = $12, movie_permanent = $13, movie_time_updated = NOW() WHERE id = $14", [movieTitle, movieBackdrop, movieType, movieGenre, movieReleaseDate, movieOriginalLanguage, movieOverview, parseFloat(movieVote), parseInt(movieVoteCount), (movieWatchingStatus || ""), parseFloat(moviePersonalVote), (moviePersonalOverview || ""), "YES", id]);
-                //console.log("Movie updated in movies");
+                console.log("Movie updated in movies");
             }
             if (movie.movie_permanent == "NO") {
                 await db.query("UPDATE temp_movies SET movie_title = $1, movie_backdrop = $2, movie_type = $3, movie_genre = $4, movie_release_date = $5, movie_original_language = $6, movie_overview = $7, movie_vote = CAST($8 AS REAL), movie_vote_count = CAST($9 AS INTEGER), movie_watching_status = $10, movie_personal_vote = CAST($11 AS REAL), movie_personal_overview = $12, movie_permanent = $13, movie_time_updated = NOW() WHERE id = $14", [movieTitle, movieBackdrop, movieType, movieGenre, movieReleaseDate, movieOriginalLanguage, movieOverview, parseFloat(movieVote), parseInt(movieVoteCount), (movieWatchingStatus || ""), parseFloat(moviePersonalVote), (moviePersonalOverview || ""), "NO", id]);
-                //console.log("Movie updated in temp_movies");
+                console.log("Movie updated in temp_movies");
             }
             res.cookie("success", "Film aggiornato con successo!", { maxAge: 5000, httpOnly: false });
         } catch (error) {
@@ -686,7 +659,7 @@ app.post("/movie/:id/delete", async (req, res) => {
     if (res.locals.user?.role === "user") {
         try {
             await db.query("DELETE FROM temp_movies WHERE id = $1", [id]);
-            //console.log("Movie deleted from temp_movies");
+            console.log("Movie deleted from temp_movies");
             res.cookie("success", "Film eliminato con successo temporaneamente!", { maxAge: 5000, httpOnly: false });
             res.redirect("/");
         } catch (error) {
@@ -700,7 +673,7 @@ app.post("/movie/:id/delete", async (req, res) => {
         try {
             await db.query("DELETE FROM movies WHERE id = $1", [id]);
             await db.query("DELETE FROM temp_movies WHERE id = $1", [id]);
-            //console.log("Movie deleted from movies");
+            console.log("Movie deleted from movies");
             res.cookie("success", "Film eliminato con successo permanentemente!", { maxAge: 5000, httpOnly: false });
             res.redirect("/");
         } catch (error) {
@@ -808,7 +781,7 @@ app.post("/updateTemp", async (req, res) => {
     );
     await db.query("INSERT INTO cron_log (id, last_run) VALUES (1, NOW()) ON CONFLICT (id) DO UPDATE SET last_run = NOW()");
     // Log dell'aggiornamento
-    //console.log("Tabella temp_movies aggiornata!");
+    console.log("Tabella temp_movies aggiornata!");
     res.cookie("success", "Tabella temp_movies aggiornata con successo!", { maxAge: 5000, httpOnly: false });
     res.redirect("/admin");
 });
@@ -822,7 +795,7 @@ app.post("/makeAdmin", async (req, res) => {
     const { userId } = req.body;
     try {
         await db.query("UPDATE users SET role = 'admin' WHERE id = $1", [userId]);
-        //console.log(`Utente con ID ${userId} promosso ad admin`);
+        console.log(`Utente con ID ${userId} promosso ad admin`);
         res.cookie("success", "Utente promosso ad admin con successo!", { maxAge: 5000, httpOnly: false });
     } catch (error) {
         console.error("Errore nella promozione dell'utente:", error);
@@ -840,7 +813,7 @@ app.post("/removeAdmin", async (req, res) => {
     const { userId } = req.body;
     try {
         await db.query("UPDATE users SET role = 'user' WHERE id = $1", [userId]);
-        //console.log(`Utente con ID ${userId} declassato da admin a user`);
+        console.log(`Utente con ID ${userId} declassato da admin a user`);
         res.cookie("success", "Utente declassato da admin a user con successo!", { maxAge: 5000, httpOnly: false });
     } catch (error) {
         console.error("Errore nella declassificazione dell'utente:", error);
@@ -932,7 +905,7 @@ app.post("/update-name", async (req, res) => {
 
         // Aggiorno il nome utente
         await db.query("UPDATE users SET username = $1 WHERE id = $2", [newUsername, user.id]);
-        //console.log(`Nome utente aggiornato da ${username} a ${newUsername}`);
+        console.log(`Nome utente aggiornato da ${username} a ${newUsername}`);
         res.cookie("success", "Nome utente aggiornato con successo!", { maxAge: 5000, httpOnly: false });
     } 
     catch (error) {
@@ -1004,7 +977,7 @@ app.post("/update-password", async (req, res) => {
     try {
         // Aggiorno la password
         await db.query("UPDATE users SET password = $1 WHERE id = $2", [newPassword, user.id]);
-        //console.log(`Password aggiornata per l'utente ${username}`);
+        console.log(`Password aggiornata per l'utente ${username}`);
         res.cookie("success", "Password aggiornata con successo!", { maxAge: 5000, httpOnly: false });
     }
     catch (error) {
@@ -1065,7 +1038,7 @@ app.post("/delete-account", async (req, res) => {
     try {
         // Elimino l'account
         await db.query("DELETE FROM users WHERE id = $1", [user.id]);
-        //console.log(`Account dell'utente ${username} eliminato`);
+        console.log(`Account dell'utente ${username} eliminato`);
         res.cookie("success", "Account eliminato con successo!", { maxAge: 5000, httpOnly: false });
         res.clearCookie("token"); // Rimuovo il token di autenticazione
     } 
