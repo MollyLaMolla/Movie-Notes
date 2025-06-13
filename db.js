@@ -3,38 +3,48 @@ const { Pool } = pg;
 import dotenv from "dotenv";
 dotenv.config();
 
-// 🔄 Crea un pool di connessioni con timeout e keep-alive
+// 🔄 Funzione per creare un nuovo pool di connessioni
 const createPool = () => {
     return new Pool({
         connectionString: process.env.DATABASE_URL,
         ssl: { rejectUnauthorized: false },
         max: 10, // Limita a 10 connessioni simultanee (evita sovraccarico)
-        idleTimeoutMillis: false, // Disabilita il timeout per evitare chiusure premature
+        idleTimeoutMillis: 60000, // Chiude connessioni inattive dopo 60s
         keepAlive: true, // Mantiene la connessione sempre attiva
     });
 };
 
+// 🔹 Gestione del pool con riconnessione automatica
 let db = createPool();
+
+const reconnectDB = async () => {
+    console.log("🔄 Tentativo di riconnessione al database...");
+    try {
+        await db.end(); // Chiude il pool attuale prima di ricrearlo
+    } catch (closeErr) {
+        console.error("⚠ Errore nella chiusura del pool:", closeErr);
+    }
+    db = createPool(); // Ricrea il pool dopo aver chiuso il precedente
+};
 
 // 🔹 Gestione errori → Riconnessione automatica senza crash
 db.on("error", (err) => {
     console.error("❌ Errore database:", err);
-    console.log("🔄 Tentativo di riconnessione...");
-    db = createPool(); // Ricrea il pool di connessione
+    reconnectDB();
 });
 
 // 🔹 Protezione da errori critici che potrebbero chiudere il server
 process.on("uncaughtException", (err) => {
     console.error("🚨 Eccezione non gestita:", err);
-    console.log("🔄 Riavvio del database...");
-    db = createPool(); // Ricrea il pool di connessione
+    reconnectDB();
 });
 
 process.on("unhandledRejection", (err) => {
     console.error("🚨 Promessa rifiutata:", err);
-    console.log("🔄 Riavvio del database...")
-    db = createPool(); // Ricrea il pool di connessione
+    reconnectDB();
 });
 
-export default db;
+// 🔹 Funzione per ottenere sempre il pool attuale
+export const getDB = () => db;
 
+export default db;
