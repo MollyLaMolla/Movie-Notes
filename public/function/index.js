@@ -333,6 +333,29 @@ setInterval(() => {
     updateTimeReset();
 }, 1000); // Aggiorna ogni secondo
 
+function timeLeftInSeconds() {
+    const now = new Date();
+    const currentMinute = now.getMinutes();
+    const currentSecond = now.getSeconds();
+    // il reset avviene ogni 15 minuti
+    let minutesLeft = 15 - currentMinute % 15 - 1; // Sottrai 1 per considerare il minuto corrente
+    let secondsLeft = 60 - currentSecond;
+    if (secondsLeft === 60) {
+        // Se i secondi sono 60, significa che il minuto è completo, quindi decrementa i minuti
+        minutesLeft += 1;
+        secondsLeft = 0; // I secondi sono ora 0
+    }
+    const totalSecondsLeft = minutesLeft * 60 + secondsLeft;
+    return totalSecondsLeft;                                                                                                          
+}
+
+setTimeout(() => {
+    setTimeout(() => {
+        location.reload(); // Ricarica la pagina dopo il tempo rimanente
+    }, 1000); // Ricarica la pagina dopo 1 secondo per evitare problemi di sincronizzazione
+}, timeLeftInSeconds() * 1000); // Ricarica la pagina dopo il tempo rimanente in secondi 
+
+
 const statusBadge = document.getElementById('status-info');
 
 statusBadge.addEventListener('click', () => {
