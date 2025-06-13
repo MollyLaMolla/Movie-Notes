@@ -5,7 +5,6 @@ let smoothMouseX = mouseX; // Smooth mouse position for animation
 // update the screen width on resize
 window.addEventListener('resize', () => {
     screenWidth = window.innerWidth;
-    console.log('Screen width updated:', screenWidth);
     createDivs(); // Recreate divs on resize
 });
 

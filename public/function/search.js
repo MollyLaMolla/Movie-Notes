@@ -54,7 +54,7 @@ async function getGenres() {
             genrs.tv.push(item);
         });
     }
-    console.log(genrs);
+    //console.log(genrs);
 }
 
 document.getElementById("searchInput").addEventListener("input", (event) => {
@@ -83,8 +83,8 @@ function checkInput(){
     const loader = document.getElementById("search-loader");
     document.getElementById("suggestionsList").innerHTML = ""; // Pulisce la lista dei suggerimenti
     document.getElementById("searchSuggestions").classList.remove("active");
-    console.log(query);
-    console.log(encodeURIComponent(query));
+    //console.log(query);
+    //console.log(encodeURIComponent(query));
     if (query.length > 2) {  // Evita richieste per stringhe troppo corte
         loader.style.display = "flex"; // Mostra il loader
         // testarray(query).then((data) => {
@@ -147,7 +147,7 @@ const options = {
 };
 
 function updatePageContent(movie) {
-    console.log(movie);
+    //console.log(movie);
     searchInput.blur();
     suggestionsList.innerHTML = ""; // Pulisce la lista dei suggerimenti
     movieData.classList.remove("no-display");
@@ -190,9 +190,9 @@ function updatePageContent(movie) {
 async function getMovieDataTheMovieDb(title) {
     const responseTv = await fetchAllResultsTv(title);
     const responseMovie = await fetchAllResultsMovie(title);
-    // console.log(encodeURIComponent(title));
-    console.log(responseTv);
-    console.log(responseMovie);
+    // //console.log(encodeURIComponent(title));
+    //console.log(responseTv);
+    //console.log(responseMovie);
     let data = [];
     if (responseTv && responseTv.length > 0) {
         responseTv.forEach((item) => {
@@ -206,10 +206,10 @@ async function getMovieDataTheMovieDb(title) {
         });
     }
 
-    console.log(data);
+    //console.log(data);
     if (data.length > 0) {
         data.sort((a, b) => b.popularity - a.popularity); // Ordina i risultati in base alla popolarità
-        console.log(data);
+        //console.log(data);
         // Ordina i risultati in base alla popolarità
         let movieData = [];
         if (genrs.movies.length === 0 && genrs.tv.length === 0) {
@@ -243,10 +243,10 @@ async function getMovieDataTheMovieDb(title) {
                 type: data[i].type,
             });
         }}
-        console.log(movieData);
+        //console.log(movieData);
         return movieData; // Prende i primi 10 risultati
     } else {
-        console.log("No results found");
+        //console.log("No results found");
         return null;
     }
 }
@@ -260,7 +260,7 @@ async function fetchAllResultsTv(title) {
     do {
         const response = await fetch(`https://api.themoviedb.org/3/search/tv?api_key=${apiKey}&query=${(title)}&page=${page}`, options);
         const data = await response.json();
-        console.log(data.results);
+        //console.log(data.results);
 
         if (data.results) {
             data.results.forEach((item) => {
@@ -289,7 +289,7 @@ async function fetchAllResultsMovie(title) {
     do {
         const response = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${(title)}&page=${page}&min_popularity=1.0`, options);
         const data = await response.json();
-        console.log(data.results);
+        //console.log(data.results);
 
         if (data.results) {
             data.results.forEach((item) => {
@@ -308,7 +308,7 @@ async function fetchAllResultsMovie(title) {
 }
 
 async function testarray(query){
-    console.log("testarray");
+    //console.log("testarray");
     if (query === "ggg"){
         return;
     }

@@ -114,7 +114,7 @@ statusbadge.forEach((badge) => {
         // on click click the .movie-link element
         const card = badge.parentElement;
         const movieLink = card.querySelector('.movie-link');
-        console.log(card);
+        //console.log(card);
         if (movieLink) {
             movieLink.click();
         }
@@ -126,7 +126,7 @@ temporaryBadge.forEach((badge) => {
         // on click click the .movie-link element
         const card = badge.parentElement;
         const movieLink = card.querySelector('.movie-link');
-        console.log(card);
+        //console.log(card);
         if (movieLink) {
             movieLink.click();
         }
@@ -223,7 +223,7 @@ function getCurrentUrlFilters() {
 // Utility: aggiorna i section del form dei filtri in base ai valori correnti dell'URL
 function updateFilterFormSections() {
     const currentFilters = getCurrentUrlFilters();
-    console.log("Current Filters:", currentFilters);
+    //console.log("Current Filters:", currentFilters);
     const typeSelect = document.querySelectorAll('.type-select')[0];
     const whatchingStatusSelect = document.querySelectorAll('.whatching-status-select')[0];
     const movieGenreSelect = document.querySelectorAll('.movie-genre-select')[0];
@@ -243,13 +243,13 @@ function updateFilterFormSections() {
     sortSelect.value = currentFilters.sort || "time_updated";
     // imposta il valore del select order
     orderSelect.value = currentFilters.order || "asc";
-    //console.logga i valori impostati
-    console.log("Type Select Value:", typeSelect.value);
-    console.log("Whatching Status Select Value:", whatchingStatusSelect.value);
-    console.log("Movie Genre Select Value:", movieGenreSelect.value);
-    console.log("TV Genre Select Value:", tvGenreSelect.value);
-    console.log("Sort Select Value:", sortSelect.value);
-    console.log("Order Select Value:", orderSelect.value);
+    ////console.logga i valori impostati
+    //console.log("Type Select Value:", typeSelect.value);
+    //console.log("Whatching Status Select Value:", whatchingStatusSelect.value);
+    //console.log("Movie Genre Select Value:", movieGenreSelect.value);
+    //console.log("TV Genre Select Value:", tvGenreSelect.value);
+    //console.log("Sort Select Value:", sortSelect.value);
+    //console.log("Order Select Value:", orderSelect.value);
     // Cambia la visibilità dei div in base al tipo selezionato
     filterTypeChange.call(typeSelect);
     // Cambia la visibilità dei div in base allo stato di visione selezionato
@@ -352,11 +352,11 @@ document.addEventListener('click', (event) => {
 const socket = io(); // Assicura che sia definito correttamente
 
 socket.on("connect", () => {
-    console.log("✅ Connesso al server con ID:", socket.id);
+    //console.log("✅ Connesso al server con ID:", socket.id);
 });
 
 socket.on("reload", () => {
-    console.log("🔄 Ricevuto segnale di aggiornamento! Ricarico la pagina...");
+    //console.log("🔄 Ricevuto segnale di aggiornamento! Ricarico la pagina...");
     window.location.reload();
 });
 

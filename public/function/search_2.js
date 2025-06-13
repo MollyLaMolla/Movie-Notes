@@ -1,6 +1,6 @@
 const allMovies = document.getElementById("all-movies").getAttribute("data-movies") || "[]";
 const moviesArray = JSON.parse(allMovies);
-console.log("Movies array:", moviesArray);
+//console.log("Movies array:", moviesArray);
 
 function searchMovies(query) {
     const searchResults = moviesArray.filter(movie => {
@@ -60,7 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
     searchInput.addEventListener("input", handleSearchInput);
     searchInput.addEventListener("focus", handleSearchInput);
     searchInput.addEventListener("blur", () => {
-        console.log("Search input blurred, hiding results.");
+        //console.log("Search input blurred, hiding results.");
         const searchResults = document.getElementById("search-results");
         searchResults.classList.remove("active");
     });

@@ -1,6 +1,6 @@
 // Prendi il numero totale di pagine dall'attributo data-totalPages del container
 const totalPages = document.getElementById("data-container").getAttribute("data-totalPages") || 1;
-console.log(`Total pages dal server: ${totalPages}`);
+//console.log(`Total pages dal server: ${totalPages}`);
 
 function getMaxPages() {
     if (window.innerWidth > 1200) {
@@ -78,14 +78,14 @@ window.addEventListener("resize", () => {
 });
 
 window.addEventListener("load", () => {
-    console.log("Page loaded, generating pagination...");
+    //console.log("Page loaded, generating pagination...");
     const currentPage = parseInt(window.location.pathname.split('/').pop()) || 1;
     generatePagination(currentPage, totalPages);
 });
 // event listener per quando vai avanti o indietro con le pagine
 window.addEventListener("popstate", () => {
     setTimeout(() => {
-    console.log("Popstate event triggered, generating pagination...");
+    //console.log("Popstate event triggered, generating pagination...");
     const currentPage = parseInt(window.location.pathname.split('/').pop()) || 1;
     generatePagination(currentPage, totalPages);
     }, 1000);
