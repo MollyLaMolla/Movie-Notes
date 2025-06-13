@@ -6,7 +6,6 @@ import cron from "node-cron";
 import axios from "axios";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
-import connectLivereload from "connect-livereload";
 
 
 const app = express();
@@ -24,7 +23,7 @@ app.use((req, res, next) => {
     res.locals.user = req.user || null; // Se `req.user` non esiste, assegna `null`
     console.log("Middleware: Utente autenticato:", res.locals.user);
     // Aggiungi il token ai cookie se non esiste
-    if (!req.cookies.token) {
+    if (req.cookies.token === null) {
         const token = jwt.sign({ username: "user", role: "user" }, process.env.JWT_SECRET, { expiresIn: "1h" });
         res.cookie("token", token, { httpOnly: true, maxAge: 3600000 });
         console.log("Token aggiunto ai cookie:", token);
