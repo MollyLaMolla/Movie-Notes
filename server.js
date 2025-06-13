@@ -40,12 +40,22 @@ app.use((req, res, next) => {
             res.locals.user = decoded;
         } catch (error) {
             // Qui gestisci TUTTI gli errori di verifica, anche token scaduto
-            res.locals.user = null;
+            res.locals.user = {
+                role: "user", // Imposta un ruolo di default
+                id: 2, // Imposta un ID di default
+                username: "user", // Imposta un nome utente di default
+                password: "1234", // Imposta una password di default
+            }
             // Non lanciare errori, logga solo se vuoi
             // console.warn("Token non valido:", error.message);
         }
     } else {
-        res.locals.user = null;
+        res.locals.user = {
+            role: "user", // Imposta un ruolo di default
+            id: 2, // Imposta un ID di default
+            username: "user", // Imposta un nome utente di default
+            password: "1234", // Imposta una password di default
+        };
     }
     next();
 });
