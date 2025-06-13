@@ -7,17 +7,17 @@ import cron from "node-cron";
 import axios from "axios";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
-import livereload from "livereload";
-import connectLivereload from "connect-livereload";
+// import livereload from "livereload";
+// import connectLivereload from "connect-livereload";
 
 
 const __dirname = path.resolve();
-const liveReloadServer = livereload.createServer();
-liveReloadServer.watch([path.join(__dirname, "public"), path.join(__dirname, "views")]);
+// const liveReloadServer = livereload.createServer();
+// liveReloadServer.watch([path.join(__dirname, "public"), path.join(__dirname, "views")]);
 const app = express();
 const port = 3000;
 
-app.use(connectLivereload());
+// app.use(connectLivereload());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static("public"));
