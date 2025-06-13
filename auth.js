@@ -2,6 +2,7 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import db from "./db.js";
 import dotenv from "dotenv";
+import bcrypt from "bcryptjs";
 
 dotenv.config();
 
@@ -19,8 +20,9 @@ router.post("/login", async (req, res) => {
 
         const user = result.rows[0];
 
-        // Verifica la password (usa bcrypt per maggiore sicurezza)
-        if (password !== user.password) {
+        // Verifica la password hashata
+        const passwordMatch = await bcrypt.compare(password, user.password);
+        if (!passwordMatch) {
             return res.status(403).json({ error: "Password errata" });
         }
 

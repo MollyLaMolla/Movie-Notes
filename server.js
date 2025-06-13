@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config();
 import bodyParser from "body-parser";
 import express from "express";
 import db from "./db.js";
@@ -6,6 +8,7 @@ import cron from "node-cron";
 import axios from "axios";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
+import bcrypt from "bcryptjs";
 
 
 const app = express();
@@ -50,155 +53,171 @@ app.use((req, res, next) => {
     next();
 });
 
-// Avvia la funzione appena il server parte
 
-db.connect();
+process.on("uncaughtException", (err) => {
+    console.error("🚨 Errore critico:", err);
+});
 
-const result = await db.query("SELECT last_run FROM cron_log WHERE id = 1;");
-const lastRun = result.rows[0]?.last_run;
-const now = new Date();
-const diffMinutes = (now - new Date(lastRun)) / (1000 * 60);
+process.on("unhandledRejection", (err) => {
+    console.error("🚨 Promessa rifiutata:", err);
+});
 
-if (diffMinutes >= 15) {
-    await db.query("DROP TABLE IF EXISTS temp_movies");
-    await db.query(`CREATE TABLE temp_movies (
-        id SERIAL PRIMARY KEY,
-        movie_id TEXT,
-        movie_title TEXT,
-        movie_poster TEXT,
-        movie_backdrop TEXT,
-        movie_type TEXT,
-        movie_genre TEXT,
-        movie_release_date TEXT,
-        movie_original_language TEXT,
-        movie_overview TEXT,
-        movie_vote REAL,
-        movie_vote_count INTEGER,
-        movie_watching_status TEXT DEFAULT 'WATCHING',
-        movie_personal_vote REAL DEFAULT 0,
-        movie_personal_overview TEXT DEFAULT '',
-        movie_time_created TIMESTAMP DEFAULT NOW(),
-        movie_time_updated TIMESTAMP DEFAULT NOW(),
-        movie_permanent TEXT DEFAULT 'NO'
-        );`
-    );
-     await db.query(`
-    INSERT INTO temp_movies (
-        id,
-        movie_id,
-        movie_title,
-        movie_poster,
-        movie_backdrop,
-        movie_type,
-        movie_genre,
-        movie_release_date,
-        movie_original_language,
-        movie_overview,
-        movie_vote,
-        movie_vote_count,
-        movie_watching_status,
-        movie_personal_vote,
-        movie_personal_overview,
-        movie_time_created,
-        movie_time_updated,
-        movie_permanent 
-    )
-    SELECT
-        id,
-        movie_id,
-        movie_title,
-        movie_poster,
-        movie_backdrop,
-        movie_type,
-        movie_genre,
-        movie_release_date,
-        movie_original_language,
-        movie_overview,
-        movie_vote,
-        movie_vote_count,
-        movie_watching_status,
-        movie_personal_vote,
-        movie_personal_overview,
-        movie_time_created,
-        movie_time_updated,
-        movie_permanent
-        FROM movies`
-    );
-    await db.query("INSERT INTO cron_log (id, last_run) VALUES (1, NOW()) ON CONFLICT (id) DO UPDATE SET last_run = NOW()");
+try {
+    const result = await db.query("SELECT last_run FROM cron_log WHERE id = 1;");
+    const lastRun = result.rows[0]?.last_run;
+    const now = new Date();
+    const diffMinutes = (now - new Date(lastRun)) / (1000 * 60);
+
+    if (diffMinutes >= 15) {
+        console.log("Ultimo aggiornamento:", lastRun);
+        console.log("Aggiornamento della tabella temp_movies...");
+        try {
+            await db.query("DROP TABLE IF EXISTS temp_movies");
+            await db.query(`CREATE TABLE temp_movies (
+                id SERIAL PRIMARY KEY,
+                movie_id TEXT,
+                movie_title TEXT,
+                movie_poster TEXT,
+                movie_backdrop TEXT,
+                movie_type TEXT,
+                movie_genre TEXT,
+                movie_release_date TEXT,
+                movie_original_language TEXT,
+                movie_overview TEXT,
+                movie_vote REAL,
+                movie_vote_count INTEGER,
+                movie_watching_status TEXT DEFAULT 'WATCHING',
+                movie_personal_vote REAL DEFAULT 0,
+                movie_personal_overview TEXT DEFAULT '',
+                movie_time_created TIMESTAMP DEFAULT NOW(),
+                movie_time_updated TIMESTAMP DEFAULT NOW(),
+                movie_permanent TEXT DEFAULT 'NO'
+                );`
+            );
+            await db.query(`
+            INSERT INTO temp_movies (
+                id,
+                movie_id,
+                movie_title,
+                movie_poster,
+                movie_backdrop,
+                movie_type,
+                movie_genre,
+                movie_release_date,
+                movie_original_language,
+                movie_overview,
+                movie_vote,
+                movie_vote_count,
+                movie_watching_status,
+                movie_personal_vote,
+                movie_personal_overview,
+                movie_time_created,
+                movie_time_updated,
+                movie_permanent 
+            )
+            SELECT
+                id,
+                movie_id,
+                movie_title,
+                movie_poster,
+                movie_backdrop,
+                movie_type,
+                movie_genre,
+                movie_release_date,
+                movie_original_language,
+                movie_overview,
+                movie_vote,
+                movie_vote_count,
+                movie_watching_status,
+                movie_personal_vote,
+                movie_personal_overview,
+                movie_time_created,
+                movie_time_updated,
+                movie_permanent
+                FROM movies`
+            );
+            await db.query("INSERT INTO cron_log (id, last_run) VALUES (1, NOW()) ON CONFLICT (id) DO UPDATE SET last_run = NOW()");
+            console.log("Tabella temp_movies aggiornata!");
+        } catch (error) {
+            console.error("❌ Errore nell'aggiornamento della tabella temp_movies:", error);
+        }
+    }
+} catch (error) {
+    console.error("❌ Errore nel recupero di last_run:", error);
 }
 
-// aggioramo la tabella temp_movies ogni 15 minuti
+// aggiorniamo la tabella temp_movies ogni 15 minuti
 cron.schedule("*/15 * * * *", async () => {
-//     // aggioramo la tabella temp_movies ogni 1 ora
-// cron.schedule("0 * * * *", async () => {
-// aggioramo la tabella temp_movies ogni 1 giorni
-// cron.schedule("0 0 * * *", async () => {
-    
-    await db.query("DROP TABLE IF EXISTS temp_movies");
-    await db.query(`CREATE TABLE temp_movies (
-        id SERIAL PRIMARY KEY,
-        movie_id TEXT,
-        movie_title TEXT,
-        movie_poster TEXT,
-        movie_backdrop TEXT,
-        movie_type TEXT,
-        movie_genre TEXT,
-        movie_release_date TEXT,
-        movie_original_language TEXT,
-        movie_overview TEXT,
-        movie_vote REAL,
-        movie_vote_count INTEGER,
-        movie_watching_status TEXT DEFAULT 'WATCHING',
-        movie_personal_vote REAL DEFAULT 0,
-        movie_personal_overview TEXT DEFAULT '',
-        movie_time_created TIMESTAMP DEFAULT NOW(),
-        movie_time_updated TIMESTAMP DEFAULT NOW(),
-        movie_permanent TEXT DEFAULT 'NO'
-        );`
-    );
-     await db.query(`
-    INSERT INTO temp_movies (
-        id,
-        movie_id,
-        movie_title,
-        movie_poster,
-        movie_backdrop,
-        movie_type,
-        movie_genre,
-        movie_release_date,
-        movie_original_language,
-        movie_overview,
-        movie_vote,
-        movie_vote_count,
-        movie_watching_status,
-        movie_personal_vote,
-        movie_personal_overview,
-        movie_time_created,
-        movie_time_updated,
-        movie_permanent 
-    )
-    SELECT
-        id,
-        movie_id,
-        movie_title,
-        movie_poster,
-        movie_backdrop,
-        movie_type,
-        movie_genre,
-        movie_release_date,
-        movie_original_language,
-        movie_overview,
-        movie_vote,
-        movie_vote_count,
-        movie_watching_status,
-        movie_personal_vote,
-        movie_personal_overview,
-        movie_time_created,
-        movie_time_updated,
-        movie_permanent
-        FROM movies`
-    );
-    await db.query("INSERT INTO cron_log (id, last_run) VALUES (1, NOW()) ON CONFLICT (id) DO UPDATE SET last_run = NOW()");
+    try {
+        await db.query("DROP TABLE IF EXISTS temp_movies");
+        await db.query(`CREATE TABLE temp_movies (
+            id SERIAL PRIMARY KEY,
+            movie_id TEXT,
+            movie_title TEXT,
+            movie_poster TEXT,
+            movie_backdrop TEXT,
+            movie_type TEXT,
+            movie_genre TEXT,
+            movie_release_date TEXT,
+            movie_original_language TEXT,
+            movie_overview TEXT,
+            movie_vote REAL,
+            movie_vote_count INTEGER,
+            movie_watching_status TEXT DEFAULT 'WATCHING',
+            movie_personal_vote REAL DEFAULT 0,
+            movie_personal_overview TEXT DEFAULT '',
+            movie_time_created TIMESTAMP DEFAULT NOW(),
+            movie_time_updated TIMESTAMP DEFAULT NOW(),
+            movie_permanent TEXT DEFAULT 'NO'
+            );`
+        );
+        await db.query(`
+        INSERT INTO temp_movies (
+            id,
+            movie_id,
+            movie_title,
+            movie_poster,
+            movie_backdrop,
+            movie_type,
+            movie_genre,
+            movie_release_date,
+            movie_original_language,
+            movie_overview,
+            movie_vote,
+            movie_vote_count,
+            movie_watching_status,
+            movie_personal_vote,
+            movie_personal_overview,
+            movie_time_created,
+            movie_time_updated,
+            movie_permanent 
+        )
+        SELECT
+            id,
+            movie_id,
+            movie_title,
+            movie_poster,
+            movie_backdrop,
+            movie_type,
+            movie_genre,
+            movie_release_date,
+            movie_original_language,
+            movie_overview,
+            movie_vote,
+            movie_vote_count,
+            movie_watching_status,
+            movie_personal_vote,
+            movie_personal_overview,
+            movie_time_created,
+            movie_time_updated,
+            movie_permanent
+            FROM movies`
+        );
+        await db.query("INSERT INTO cron_log (id, last_run) VALUES (1, NOW()) ON CONFLICT (id) DO UPDATE SET last_run = NOW()");
+        console.log("Tabella temp_movies aggiornata!");
+    } catch (error) {
+        console.error("❌ Errore nell'aggiornamento della tabella temp_movies (cron):", error);
+    }
 });
 
 // Middleware per rendere disponibile l'utente in tutte le route
@@ -378,9 +397,10 @@ app.post("/signup", async (req, res) => {
                 error: "Nome utente già esistente",
             });
         }
+        const hashedPassword = await bcrypt.hash(password, 10);
         const insertResult = await db.query(
             "INSERT INTO users (username, password) VALUES ($1, $2) RETURNING *",
-            [username, password]
+            [username, hashedPassword]
         );
         const user = insertResult.rows[0];
         const token = jwt.sign(
@@ -410,7 +430,9 @@ app.post("/login", async (req, res) => {
         const result = await db.query("SELECT * FROM users WHERE username = $1", [username]);
         if (result.rows.length === 0) return res.render("login.ejs", { error: "Utente non trovato" });
         const user = result.rows[0];
-        if (password !== user.password) return res.render("login.ejs", { error: "Password errata" });
+        // Confronta la password inserita con quella hashata nel db
+        const passwordMatch = await bcrypt.compare(password, user.password);
+        if (!passwordMatch) return res.render("login.ejs", { error: "Password errata" });
         const token = jwt.sign(
             { id: user.id, username: user.username, role: user.role, password: user.password },
             process.env.JWT_SECRET,
@@ -424,43 +446,58 @@ app.post("/login", async (req, res) => {
     }
 });
 
-// Route per ottenere i film (con controllo ruolo)
+// Funzione per ottenere i film (con controllo ruolo)
 async function getMoviesByRole(role) {
-    if (role === "admin") {
-        const movies = await db.query("SELECT * FROM movies");
-        return movies.rows;
-    } else {
-        const tempMovies = await db.query("SELECT * FROM temp_movies");
-        return tempMovies.rows;
+    try {
+        if (role === "admin") {
+            const movies = await db.query("SELECT * FROM movies");
+            return movies.rows;
+        } else {
+            const tempMovies = await db.query("SELECT * FROM temp_movies");
+            return tempMovies.rows;
+        }
+    } catch (error) {
+        console.error("❌ Errore nel recupero dei film per ruolo:", error);
+        return [];
     }
 }
 
 async function getAllMovies() {
-    const movies = await db.query("SELECT * FROM temp_movies");
-    return movies.rows;
+    try {
+        const movies = await db.query("SELECT * FROM temp_movies");
+        return movies.rows;
+    } catch (error) {
+        console.error("❌ Errore nel recupero di tutti i film:", error);
+        return [];
+    }
 }
 
 async function getAllGenres() {
-    const movieGenresRes = await db.query("SELECT movie_genre FROM temp_movies WHERE movie_type = 'movie'");
-    const tvGenresRes = await db.query("SELECT movie_genre FROM temp_movies WHERE movie_type = 'tv'");
+    try {
+        const movieGenresRes = await db.query("SELECT movie_genre FROM temp_movies WHERE movie_type = 'movie'");
+        const tvGenresRes = await db.query("SELECT movie_genre FROM temp_movies WHERE movie_type = 'tv'");
 
-    // Funzione di utilità per splittare e raccogliere generi unici
-    function extractUniqueGenres(rows) {
-        const genresSet = new Set();
-        rows.forEach(row => {
-            if (row.movie_genre) {
-                row.movie_genre.split(",").forEach(genre => {
-                    const trimmed = genre.trim();
-                    if (trimmed) genresSet.add(trimmed);
-                });
-            }
-        });
-        return Array.from(genresSet);
+        // Funzione di utilità per splittare e raccogliere generi unici
+        function extractUniqueGenres(rows) {
+            const genresSet = new Set();
+            rows.forEach(row => {
+                if (row.movie_genre) {
+                    row.movie_genre.split(",").forEach(genre => {
+                        const trimmed = genre.trim();
+                        if (trimmed) genresSet.add(trimmed);
+                    });
+                }
+            });
+            return Array.from(genresSet);
+        }
+
+        const movieGenress = extractUniqueGenres(movieGenresRes.rows);
+        const tvGenress = extractUniqueGenres(tvGenresRes.rows);
+        return { movieGenress, tvGenress };
+    } catch (error) {
+        console.error("❌ Errore nel recupero dei generi:", error);
+        return { movieGenress: [], tvGenress: [] };
     }
-
-    const movieGenress = extractUniqueGenres(movieGenresRes.rows);
-    const tvGenress = extractUniqueGenres(tvGenresRes.rows);
-    return { movieGenress, tvGenress };
 }
 
 app.get("/new", async (req, res) => {
@@ -807,7 +844,13 @@ app.post("/update-name", async (req, res) => {
         return res.redirect("/account");
     }
     // Controllo se la password corrente corrisponde a quella dell'utente autenticato
-    if (currentPassword !== user.password) {
+    const userFromDb = await db.query("SELECT * FROM users WHERE id = $1", [user.id]);
+    if (userFromDb.rows.length === 0) {
+        res.cookie("error", "Utente non trovato!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/account");
+    }
+    const passwordMatch = await bcrypt.compare(currentPassword, userFromDb.rows[0].password);
+    if (!passwordMatch) {
         res.cookie("error", "Password corrente non corretta!", { maxAge: 5000, httpOnly: false });
         return res.redirect("/account");
     }
@@ -871,7 +914,13 @@ app.post("/update-password", async (req, res) => {
     }
 
     // Controllo se la password corrente corrisponde a quella dell'utente autenticato
-    if (currentPassword !== user.password) {
+    const userFromDb = await db.query("SELECT * FROM users WHERE id = $1", [user.id]);
+    if (userFromDb.rows.length === 0) {
+        res.cookie("error", "Utente non trovato!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/account");
+    }
+    const passwordMatch = await bcrypt.compare(currentPassword, userFromDb.rows[0].password);
+    if (!passwordMatch) {
         res.cookie("error", "Password corrente non corretta!", { maxAge: 5000, httpOnly: false });
         return res.redirect("/account");
     }
@@ -897,21 +946,21 @@ app.post("/update-password", async (req, res) => {
 
     try {
         // Aggiorno la password
-        await db.query("UPDATE users SET password = $1 WHERE id = $2", [newPassword, user.id]);
+        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+        await db.query("UPDATE users SET password = $1 WHERE id = $2", [hashedNewPassword, user.id]);
         res.cookie("success", "Password aggiornata con successo!", { maxAge: 5000, httpOnly: false });
+        res.locals.user.password = hashedNewPassword;
+        // aggiorna il token
+        const token = jwt.sign(
+            { id: user.id, username: user.username, role: user.role, password: hashedNewPassword },
+            process.env.JWT_SECRET,
+            { expiresIn: "1h" }
+        );
+        res.cookie("token", token, { httpOnly: true, maxAge: 3600000 });
     }
     catch (error) {
         res.cookie("error", "Errore nell'aggiornamento della password!", { maxAge: 5000, httpOnly: false });
     }
-    // aggiorna locals user
-    res.locals.user.password = newPassword; // Aggiorno la password nell'oggetto user
-    // aggiorna il token
-    const token = jwt.sign(
-        { id: user.id, username: user.username, role: user.role, password: newPassword },
-        process.env.JWT_SECRET,
-        { expiresIn: "1h" }
-    );
-    res.cookie("token", token, { httpOnly: true, maxAge: 3600000 }); // Rimuovo il vecchio token e ne aggiungo uno nuovo
     // aggiorna il cookie
     res.cookie("success", "Password aggiornata con successo!", { maxAge: 5000, httpOnly: false });
     // reindirizzo alla pagina account
