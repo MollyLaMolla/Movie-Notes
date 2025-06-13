@@ -20,27 +20,31 @@ app.use("/auth", authRoutes);
 app.use(cookieParser());
 
 app.use((req, res, next) => {
-    // Aggiungi il token ai cookie se non esiste
     if (!req.cookies.token) {
         const token = jwt.sign({ username: "user", role: "user" }, process.env.JWT_SECRET, { expiresIn: "1h" });
         res.cookie("token", token, { httpOnly: true, maxAge: 3600000 });
+        console.log("Token created and set in cookies");
     }
     // Controlla se l'utente è autenticato
     if (req.cookies.token) {
         try {
             const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
+            console.log("Decoded token:", decoded);
             if (!decoded || !decoded.username || !decoded.role) {
                 res.clearCookie("token");
                 const token = jwt.sign({ username: "user", role: "user" }, process.env.JWT_SECRET, { expiresIn: "1h" });
                 res.cookie("token", token, { httpOnly: true, maxAge: 3600000 });
-                return res.redirect("/");
+                console.log("Invalid token, new token created");
+                res.locals.user = { username: "user", role: "user" }; // Imposta un utente di default
             }
-            res.locals.user = decoded;
+            res.locals.user = decoded; // Rende l'utente disponibile in tutte le route
+            console.log("User authenticated:", res.locals.user);
         } catch (error) {
             res.clearCookie("token");
             const token = jwt.sign({ username: "user", role: "user" }, process.env.JWT_SECRET, { expiresIn: "1h" });
             res.cookie("token", token, { httpOnly: true, maxAge: 3600000 });
-            return res.redirect("/");
+            console.log("Token verification failed, new token created");
+            res.locals.user = { username: "user", role: "user" }; // Imposta un utente di default
         }
     }
     next();
@@ -203,20 +207,6 @@ cron.schedule("*/15 * * * *", async () => {
 });
 
 // Middleware per rendere disponibile l'utente in tutte le route
-app.use((req, res, next) => {
-    const token = req.cookies.token;
-    if (token) {
-        try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            res.locals.user = decoded;
-        } catch (error) {
-            res.locals.user = null;
-        }
-    } else {
-        res.locals.user = null;
-    }
-    next();
-});
 
 app.get("/", (req, res) => {
     res.redirect("/movies/1");
