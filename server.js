@@ -23,31 +23,28 @@ app.use((req, res, next) => {
     // Controlla se l'utente è autenticato
     // Se il token è presente nei cookie, verifica la validità
     // Se il token non è presente, crea un token di default
-    console.log("Middleware di autenticazione in esecuzione");
     if (req.cookies.token) {
         try {
             const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
-            console.log("Decoded token:", decoded);
             if (!decoded || !decoded.username || !decoded.role) {
                 res.clearCookie("token");
                 const token = jwt.sign({ username: "user", role: "user" }, process.env.JWT_SECRET, { expiresIn: "1h" });
                 res.cookie("token", token, { httpOnly: true, maxAge: 3600000 });
-                console.log("Invalid token, new token created");
                 res.locals.user = { username: "user", role: "user" }; // Imposta un utente di default
+            }else {
+                res.locals.user = { username: decoded.username, role: decoded.role }; // Imposta l'utente autenticato
             }
-            res.locals.user = decoded; // Rende l'utente disponibile in tutte le route
+
         } catch (error) {
             res.clearCookie("token");
             const token = jwt.sign({ username: "user", role: "user" }, process.env.JWT_SECRET, { expiresIn: "1h" });
             res.cookie("token", token, { httpOnly: true, maxAge: 3600000 });
-            console.log("Token verification failed, new token created");
             res.locals.user = { username: "user", role: "user" }; // Imposta un utente di default
         }
     }
     else {
         const token = jwt.sign({ username: "user", role: "user" }, process.env.JWT_SECRET, { expiresIn: "1h" });
         res.cookie("token", token, { httpOnly: true, maxAge: 3600000 });
-        console.log("Token created and set in cookies");
         res.locals.user = { username: "user", role: "user" }; // Imposta un utente di default
     }
     next();
@@ -971,7 +968,7 @@ app.post("/delete-account", async (req, res) => {
 
 
 app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
+    console.log(`Server in esecuzione su http://localhost:${port}`);
 });
 
 
