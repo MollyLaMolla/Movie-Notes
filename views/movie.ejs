@@ -12,7 +12,6 @@
     <%- include('partials/header.ejs') %>
     <%- include('partials/cookie.ejs') %>
     <% 
-    console.log(movie) 
     const { id, movie_id, movie_title, movie_poster, movie_backdrop, movie_type, movie_genre, movie_release_date, movie_original_language, movie_overview, movie_vote, movie_vote_count, movie_watching_status, movie_personal_vote, movie_personal_overview, movie_time_created, movie_time_updated } = movie;
     const title = movie_title;
     const image = movie_poster || movie_backdrop;

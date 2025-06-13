@@ -16,8 +16,6 @@ let db = createPool();
 
 // Gestione errori → Riconnessione automatica
 db.on("error", (err) => {
-    console.error("❌ Errore database:", err);
-    console.log("🔄 Riconnessione al database...");
     db = createPool(); // Ricrea il pool
 });
 
