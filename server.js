@@ -46,15 +46,6 @@ app.use((req, res, next) => {
     next();
 });
 
-process.on("uncaughtException", (err) => {
-    console.error("🚨 Errore critico:", err);
-});
-
-process.on("unhandledRejection", (err) => {
-    console.error("🚨 Promessa rifiutata:", err);
-});
-
-
 
 axios.defaults.baseURL = `http://localhost:${port}`;
 
