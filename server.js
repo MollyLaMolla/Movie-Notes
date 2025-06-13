@@ -29,8 +29,18 @@ app.use((req, res, next) => {
     if (req.cookies.token) {
         try {
             const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
+            if (!decoded || !decoded.username || !decoded.role) {
+                res.clearCookie("token");
+                const token = jwt.sign({ username: "user", role: "user" }, process.env.JWT_SECRET, { expiresIn: "1h" });
+                res.cookie("token", token, { httpOnly: true, maxAge: 3600000 });
+                return res.redirect("/");
+            }
+            res.locals.user = decoded;
         } catch (error) {
             res.clearCookie("token");
+            const token = jwt.sign({ username: "user", role: "user" }, process.env.JWT_SECRET, { expiresIn: "1h" });
+            res.cookie("token", token, { httpOnly: true, maxAge: 3600000 });
+            return res.redirect("/");
         }
     }
     next();
@@ -245,21 +255,6 @@ app.get("/movies/:page", async (req, res) => {
     }
     
     try {
-        let token = req.cookies.token;
-        // Se non c'è token, genera token base
-        if (!token) {
-            const response = await axios.post("http://localhost:3000/auth/login", {
-                username: "user",
-                password: "1234",
-            });
-            token = response.data.token;
-            // Imposta il token nei cookie
-            res.cookie("token", token, { httpOnly: true, maxAge: 3600000 });
-        }
-        // Usa il token per ottenere i film
-        if (res.locals.user === null) {
-            res.locals.user = jwt.verify(token, process.env.JWT_SECRET);
-        }
         const moviesResponse = await getAllMovies();
         const moviesForSearch = moviesResponse.map((movie) => ({
             movie_id: movie.id,

@@ -7,7 +7,6 @@ const createPool = () => {
     return new Pool({
         connectionString: process.env.DATABASE_URL,
         ssl: { rejectUnauthorized: false },
-        max: 10, // Limita connessioni simultanee
         idleTimeoutMillis: 5000, // Chiude connessioni inattive dopo 5s
     });
 };
