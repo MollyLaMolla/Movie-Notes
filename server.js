@@ -30,7 +30,6 @@ app.use((req, res, next) => {
         try {
             const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
         } catch (error) {
-            console.warn("Token non valido:", error.message);
             res.clearCookie("token");
         }
     }
@@ -210,7 +209,6 @@ app.use((req, res, next) => {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             res.locals.user = decoded;
         } catch (error) {
-            console.warn("Token non valido:", error.message);
             res.locals.user = null;
         }
     } else {
@@ -300,7 +298,6 @@ app.get("/movies/:page", async (req, res) => {
                 error,
             });
     } catch (error) {
-        console.error("Errore:", error);
         res.render("index.ejs", {
             error: "Errore nel recupero dei film",
         });
@@ -424,7 +421,6 @@ app.post("/signup", async (req, res) => {
         res.cookie("token", token, { httpOnly: true, maxAge: 3600000 });
         res.redirect("/");
     } catch (error) {
-        console.error("Errore nella registrazione:", error);
         res.render("signup.ejs", {
             error: "Errore nella registrazione",
         });
@@ -453,7 +449,6 @@ app.post("/login", async (req, res) => {
         res.cookie("token", token, { httpOnly: true, maxAge: 3600000 });
         res.redirect("/");
     } catch (error) {
-        console.error("Errore nel login:", error);
         res.status(500).json({ error: "Errore interno del server" });
     }
 });
@@ -552,7 +547,8 @@ app.post("/new", async (req, res) => {
     try {
         await db.query(query, values);
     } catch (err) {
-        console.error("Error adding movie to database", err);
+        res.cookie("error", "Errore durante l'inserimento del film!", { maxAge: 5000, httpOnly: false });
+        return res.redirect("/");
     }
     res.redirect("/");
 });
@@ -570,7 +566,6 @@ app.get("/movie/:id", async (req, res) => {
             movie,
         });
     } catch (error) {
-        console.error("Errore:", error);
         res.cookie("error", "Errore nel recupero del film!", { maxAge: 5000, httpOnly: false });
         res.redirect("/");
     }
@@ -592,7 +587,6 @@ app.get("/edit/:id", async (req, res) => {
             btn: "Edit",
         });
     } catch (error) {
-        console.error("Errore:", error);
         res.cookie("error", "Errore nel recupero del film!", { maxAge: 5000, httpOnly: false });
         res.redirect("/");
     }
@@ -607,7 +601,6 @@ app.post("/edit/:id", async (req, res) => {
             await db.query("UPDATE temp_movies SET movie_title = $1, movie_backdrop = $2, movie_type = $3, movie_genre = $4, movie_release_date = $5, movie_original_language = $6, movie_overview = $7, movie_vote = CAST($8 AS REAL), movie_vote_count = CAST($9 AS INTEGER), movie_watching_status = $10, movie_personal_vote = CAST($11 AS REAL), movie_personal_overview = $12, movie_permanent = $13, movie_time_updated = NOW() WHERE id = $14", [movieTitle, movieBackdrop, movieType, movieGenre, movieReleaseDate, movieOriginalLanguage, movieOverview, parseFloat(movieVote), parseInt(movieVoteCount), (movieWatchingStatus || ""), parseFloat(moviePersonalVote), (moviePersonalOverview || ""), "NO", id]);
             res.cookie("success", "Film aggiornato con successo!", { maxAge: 5000, httpOnly: false });
         } catch (error) {
-            console.error("Errore:", error);
             res.cookie("error", "Errore nel recupero del film!", { maxAge: 5000, httpOnly: false });
             return res.redirect("/");
         }
@@ -628,7 +621,6 @@ app.post("/edit/:id", async (req, res) => {
             }
             res.cookie("success", "Film aggiornato con successo!", { maxAge: 5000, httpOnly: false });
         } catch (error) {
-            console.error("Errore:", error);
             res.cookie("error", "Errore nel recupero del film!", { maxAge: 5000, httpOnly: false });
             return res.redirect("/");
         }
@@ -645,7 +637,6 @@ app.post("/movie/:id/delete", async (req, res) => {
             res.cookie("success", "Film eliminato con successo temporaneamente!", { maxAge: 5000, httpOnly: false });
             res.redirect("/");
         } catch (error) {
-            console.error("Errore:", error);
             res.cookie("error", "Errore nel recupero del film!", { maxAge: 5000, httpOnly: false });
             res.redirect("/");
         }
@@ -658,7 +649,6 @@ app.post("/movie/:id/delete", async (req, res) => {
             res.cookie("success", "Film eliminato con successo permanentemente!", { maxAge: 5000, httpOnly: false });
             res.redirect("/");
         } catch (error) {
-            console.error("Errore:", error);
             res.cookie("error", "Errore nel recupero del film!", { maxAge: 5000, httpOnly: false });
             res.redirect("/");
         }
@@ -675,7 +665,6 @@ app.get("/admin", async (req, res) => {
     }
     // Controllo se l'utente è un admin
     if (res.locals.user?.role !== "admin") {
-        console.warn("Accesso non autorizzato alla pagina admin");
         res.cookie("error", "Accesso non autorizzato alla pagina admin!", { maxAge: 5000, httpOnly: false });
         return res.redirect("/");
     }
@@ -691,7 +680,6 @@ app.get("/admin", async (req, res) => {
 
 app.post("/updateTemp", async (req, res) => {
     if (res.locals.user?.role !== "admin") {
-        console.warn("Accesso non autorizzato alla pagina admin");
         res.cookie("error", "Accesso non autorizzato alla pagina admin!", { maxAge: 5000, httpOnly: false });
         return res.redirect("/");
     }
@@ -768,7 +756,6 @@ app.post("/updateTemp", async (req, res) => {
 
 app.post("/makeAdmin", async (req, res) => {
     if (res.locals.user?.role !== "admin") {
-        console.warn("Accesso non autorizzato alla pagina admin");
         res.cookie("error", "Accesso non autorizzato alla pagina admin!", { maxAge: 5000, httpOnly: false });
         return res.redirect("/");
     }
@@ -777,7 +764,6 @@ app.post("/makeAdmin", async (req, res) => {
         await db.query("UPDATE users SET role = 'admin' WHERE id = $1", [userId]);
         res.cookie("success", "Utente promosso ad admin con successo!", { maxAge: 5000, httpOnly: false });
     } catch (error) {
-        console.error("Errore nella promozione dell'utente:", error);
         res.cookie("error", "Errore nella promozione dell'utente!", { maxAge: 5000, httpOnly: false });
     }
     res.redirect("/admin");
@@ -785,7 +771,6 @@ app.post("/makeAdmin", async (req, res) => {
 
 app.post("/removeAdmin", async (req, res) => {
     if (res.locals.user?.role !== "admin") {
-        console.warn("Accesso non autorizzato alla pagina admin");
         res.cookie("error", "Accesso non autorizzato alla pagina admin!", { maxAge: 5000, httpOnly: false });
         return res.redirect("/");
     }
@@ -794,7 +779,6 @@ app.post("/removeAdmin", async (req, res) => {
         await db.query("UPDATE users SET role = 'user' WHERE id = $1", [userId]);
         res.cookie("success", "Utente declassato da admin a user con successo!", { maxAge: 5000, httpOnly: false });
     } catch (error) {
-        console.error("Errore nella declassificazione dell'utente:", error);
         res.cookie("error", "Errore nella declassificazione dell'utente!", { maxAge: 5000, httpOnly: false });
     }
     res.redirect("/admin");
@@ -804,7 +788,6 @@ app.get("/account", async (req, res) => {
     const { error, success } = req.cookies;
     const user = res.locals.user;
     if (user.username === "user"){
-        console.warn("Accesso non autorizzato alla pagina account");
         res.cookie("error", "Accesso non autorizzato alla pagina account!", { maxAge: 5000, httpOnly: false });
         return res.redirect("/");
     }
@@ -816,7 +799,6 @@ app.get("/account", async (req, res) => {
     }
     // Controllo se l'utente è autenticato
     if (!res.locals.user) {
-        console.warn("Accesso non autorizzato alla pagina account");
         res.cookie("error", "Accesso non autorizzato alla pagina account!", { maxAge: 5000, httpOnly: false });
         return res.redirect("/");
     }
@@ -831,7 +813,6 @@ app.post("/update-name", async (req, res) => {
     const { username, newUsername, confirmNewUsername, currentPassword } = req.body;
     // Controllo se l'utente è autenticato
     if (!res.locals.user) {
-        console.warn("Accesso non autorizzato alla pagina account");
         res.cookie("error", "Accesso non autorizzato alla pagina account!", { maxAge: 5000, httpOnly: false });
         return res.redirect("/");
     }
@@ -840,34 +821,29 @@ app.post("/update-name", async (req, res) => {
 
     // Controllo se l'username dell'utente autenticato corrisponde a quello passato
     if (user.username !== username) {
-        console.warn("Nome utente non corrisponde a quello dell'utente autenticato");
         res.cookie("error", "Nome utente non corrisponde a quello dell'utente autenticato!", { maxAge: 5000, httpOnly: false });
         return res.redirect("/account");
     }
 
     // Controllo se il nuovo nome utente e la conferma sono uguali
     if (newUsername !== confirmNewUsername) {
-        console.warn("Il nuovo nome utente e la conferma non coincidono");
         res.cookie("error", "Il nuovo nome utente e la conferma non coincidono!", { maxAge: 5000, httpOnly: false });
         return res.redirect("/account");
     }
     // Controllo se la password corrente corrisponde a quella dell'utente autenticato
     if (currentPassword !== user.password) {
-        console.warn("Password corrente non corretta");
         res.cookie("error", "Password corrente non corretta!", { maxAge: 5000, httpOnly: false });
         return res.redirect("/account");
     }
 
     // Controllo se il nuovo nome utente è valido
     if (newUsername.length < 3) {
-        console.warn("Il nuovo nome utente deve essere di almeno 3 caratteri");
         res.cookie("error", "Il nuovo nome utente deve essere di almeno 3 caratteri!", { maxAge: 5000, httpOnly: false });
         return res.redirect("/account");
     }
 
     // Controllo se il nuovo nome utente è lo stesso di quello attuale
     if (newUsername === username) {
-        console.warn("Il nuovo nome utente non può essere lo stesso di quello attuale");
         res.cookie("error", "Il nuovo nome utente non può essere lo stesso di quello attuale!", { maxAge: 5000, httpOnly: false });
         return res.redirect("/account");
     }
@@ -876,7 +852,6 @@ app.post("/update-name", async (req, res) => {
         // Controllo se il nuovo nome utente esiste già
         const result = await db.query("SELECT * FROM users WHERE username = $1", [newUsername]);
         if (result.rows.length > 0) {
-            console.warn("Nome utente già esistente");
             res.cookie("error", "Nome utente già esistente!", { maxAge: 5000, httpOnly: false });
             return res.redirect("/account");
         }
@@ -886,7 +861,6 @@ app.post("/update-name", async (req, res) => {
         res.cookie("success", "Nome utente aggiornato con successo!", { maxAge: 5000, httpOnly: false });
     } 
     catch (error) {
-        console.error("Errore nell'aggiornamento del nome utente:", error);
         res.cookie("error", "Errore nell'aggiornamento del nome utente!", { maxAge: 5000, httpOnly: false });
     }
     // aggiorna locals user
@@ -909,7 +883,6 @@ app.post("/update-password", async (req, res) => {
     
     // Controllo se l'utente è autenticato
     if (!res.locals.user) {
-        console.warn("Accesso non autorizzato alla pagina account");
         res.cookie("error", "Accesso non autorizzato alla pagina account!", { maxAge: 5000, httpOnly: false });
         return res.redirect("/");
     }
@@ -917,21 +890,18 @@ app.post("/update-password", async (req, res) => {
 
     // Controllo se l'username dell'utente autenticato corrisponde a quello passato
     if (user.username !== username) {
-        console.warn("Nome utente non corrisponde a quello dell'utente autenticato");
         res.cookie("error", "Nome utente non corrisponde a quello dell'utente autenticato!", { maxAge: 5000, httpOnly: false });
         return res.redirect("/account");
     }
 
     // Controllo se la password corrente corrisponde a quella dell'utente autenticato
     if (currentPassword !== user.password) {
-        console.warn("Password corrente non corretta");
         res.cookie("error", "Password corrente non corretta!", { maxAge: 5000, httpOnly: false });
         return res.redirect("/account");
     }
 
     // Controllo se la nuova password è valida
     if (newPassword.length < 6) {
-        console.warn("La nuova password deve essere di almeno 6 caratteri");
         res.cookie("error", "La nuova password deve essere di almeno 6 caratteri!", { maxAge: 5000, httpOnly: false });
         return res.redirect("/account");
     }
@@ -939,14 +909,12 @@ app.post("/update-password", async (req, res) => {
 
     // Controllo se la nuova password e la conferma sono uguali
     if (newPassword !== confirmNewPassword) {
-        console.warn("Le nuove password non coincidono");
         res.cookie("error", "Le nuove password non coincidono!", { maxAge: 5000, httpOnly: false });
         return res.redirect("/account");
     }
 
     // Controllo se la nuova password è uguale a quella corrente
     if (newPassword === currentPassword) {
-        console.warn("La nuova password non può essere uguale a quella corrente");
         res.cookie("error", "La nuova password non può essere uguale a quella corrente!", { maxAge: 5000, httpOnly: false });
         return res.redirect("/account");
     }
@@ -957,7 +925,6 @@ app.post("/update-password", async (req, res) => {
         res.cookie("success", "Password aggiornata con successo!", { maxAge: 5000, httpOnly: false });
     }
     catch (error) {
-        console.error("Errore nell'aggiornamento della password:", error);
         res.cookie("error", "Errore nell'aggiornamento della password!", { maxAge: 5000, httpOnly: false });
     }
     // aggiorna locals user
@@ -979,14 +946,12 @@ app.post("/delete-account", async (req, res) => {
     const { username, password, acept } = req.body;
     // Controllo se l'utente ha accettato di eliminare l'account
     if (acept !== "ACEPT") {
-        console.warn("L'utente non ha accettato di eliminare l'account");
         res.cookie("error", "Devi accettare di eliminare l'account!", { maxAge: 5000, httpOnly: false });
         return res.redirect("/account");
     }
 
     // Controllo se l'utente è autenticato
     if (!res.locals.user) {
-        console.warn("Accesso non autorizzato alla pagina account");
         res.cookie("error", "Accesso non autorizzato alla pagina account!", { maxAge: 5000, httpOnly: false });
         return res.redirect("/");
     }
@@ -994,19 +959,16 @@ app.post("/delete-account", async (req, res) => {
     const user = res.locals.user;
 
     if (user.username === "molly" || username === "molly") {
-        console.warn("Tentativo di eliminazione dell'account admin 'molly'");
         res.cookie("error", "Non puoi eliminare l'account admin 'molly'!", { maxAge: 5000, httpOnly: false });
         return res.redirect("/account");
     }
 
     if (user.username !== username) {
-        console.warn("Nome utente non corrisponde a quello dell'utente autenticato");
         res.cookie("error", "Nome utente non corrisponde a quello dell'utente autenticato!", { maxAge: 5000, httpOnly: false });
         return res.redirect("/account");
     }
 
     if (password !== user.password) {
-        console.warn("Password non corretta");
         res.cookie("error", "Password non corretta!", { maxAge: 5000, httpOnly: false });
         return res.redirect("/account");
     }
@@ -1018,7 +980,6 @@ app.post("/delete-account", async (req, res) => {
         res.clearCookie("token"); // Rimuovo il token di autenticazione
     } 
     catch (error) {
-        console.error("Errore nell'eliminazione dell'account:", error);
         res.cookie("error", "Errore nell'eliminazione dell'account!", { maxAge: 5000, httpOnly: false });
     }
     // aggiorna locals user
