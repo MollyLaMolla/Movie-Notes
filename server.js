@@ -20,12 +20,10 @@ app.use("/auth", authRoutes);
 app.use(cookieParser());
 
 app.use((req, res, next) => {
-    if (!req.cookies.token) {
-        const token = jwt.sign({ username: "user", role: "user" }, process.env.JWT_SECRET, { expiresIn: "1h" });
-        res.cookie("token", token, { httpOnly: true, maxAge: 3600000 });
-        console.log("Token created and set in cookies");
-    }
     // Controlla se l'utente è autenticato
+    // Se il token è presente nei cookie, verifica la validità
+    // Se il token non è presente, crea un token di default
+    console.log("Middleware di autenticazione in esecuzione");
     if (req.cookies.token) {
         try {
             const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
@@ -38,7 +36,6 @@ app.use((req, res, next) => {
                 res.locals.user = { username: "user", role: "user" }; // Imposta un utente di default
             }
             res.locals.user = decoded; // Rende l'utente disponibile in tutte le route
-            console.log("User authenticated:", res.locals.user);
         } catch (error) {
             res.clearCookie("token");
             const token = jwt.sign({ username: "user", role: "user" }, process.env.JWT_SECRET, { expiresIn: "1h" });
@@ -47,13 +44,14 @@ app.use((req, res, next) => {
             res.locals.user = { username: "user", role: "user" }; // Imposta un utente di default
         }
     }
+    else {
+        const token = jwt.sign({ username: "user", role: "user" }, process.env.JWT_SECRET, { expiresIn: "1h" });
+        res.cookie("token", token, { httpOnly: true, maxAge: 3600000 });
+        console.log("Token created and set in cookies");
+        res.locals.user = { username: "user", role: "user" }; // Imposta un utente di default
+    }
     next();
 });
-
-
-axios.defaults.baseURL = `http://localhost:${port}`;
-
-
 
 // Avvia la funzione appena il server parte
 
@@ -495,7 +493,12 @@ app.post("/new", async (req, res) => {
             username: "user",
             password: "1234",
         });
-        token = response.data.token;
+        if (response.data.token) {
+            token = response.data.token;
+            res.cookie("token", token, { httpOnly: true, maxAge: 3600000 });
+        } else {
+            return res.status(401).json({ error: "Autenticazione fallita" });
+        }
     }
     
     const moviesResponse = await getMoviesByRole(userRole || "user");

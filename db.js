@@ -9,7 +9,7 @@ const createPool = () => {
         connectionString: process.env.DATABASE_URL,
         ssl: { rejectUnauthorized: false },
         max: 10, // Limita a 10 connessioni simultanee (evita sovraccarico)
-        idleTimeoutMillis: 10000, // Aumenta il timeout di inattività (10s)
+        idleTimeoutMillis: false, // Disabilita il timeout per evitare chiusure premature
         keepAlive: true, // Mantiene la connessione sempre attiva
     });
 };
@@ -25,11 +25,15 @@ db.on("error", (err) => {
 
 // 🔹 Protezione da errori critici che potrebbero chiudere il server
 process.on("uncaughtException", (err) => {
-    console.error("🚨 Errore critico:", err);
+    console.error("🚨 Eccezione non gestita:", err);
+    console.log("🔄 Riavvio del database...");
+    db = createPool(); // Ricrea il pool di connessione
 });
 
 process.on("unhandledRejection", (err) => {
     console.error("🚨 Promessa rifiutata:", err);
+    console.log("🔄 Riavvio del database...")
+    db = createPool(); // Ricrea il pool di connessione
 });
 
 export default db;
