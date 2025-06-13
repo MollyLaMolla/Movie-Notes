@@ -349,17 +349,6 @@ document.addEventListener('click', (event) => {
     }
 });
 
-const socket = io(); // Assicura che sia definito correttamente
-
-socket.on("connect", () => {
-    //console.log("✅ Connesso al server con ID:", socket.id);
-});
-
-socket.on("reload", () => {
-    //console.log("🔄 Ricevuto segnale di aggiornamento! Ricarico la pagina...");
-    window.location.reload();
-});
-
 
 
 

@@ -6,8 +6,8 @@ import cron from "node-cron";
 import axios from "axios";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
-import http from "http";
-import { Server } from "socket.io";
+import cors from "cors";
+
 
 
 
@@ -18,13 +18,8 @@ import { Server } from "socket.io";
 // const liveReloadServer = livereload.createServer();
 // liveReloadServer.watch([path.join(__dirname, "public"), path.join(__dirname, "views")]);
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server, {
-    cors: {
-        origin: "*"
-    }
-});
 const port = process.env.PORT || 3000;
+app.use(cors());
 
 // app.use(connectLivereload());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -34,12 +29,6 @@ app.set("view engine", "ejs");
 app.set("views", "views");
 app.use("/auth", authRoutes);
 app.use(cookieParser());
-
-app.use("/socket.io", express.static("node_modules/socket.io/client-dist"));
-
-io.on("connection", (socket) => {
-    console.log("✅ Nuovo client connesso!");
-});
 
 
 
@@ -219,7 +208,6 @@ cron.schedule("*/15 * * * *", async () => {
         FROM movies`
     );
     await db.query("INSERT INTO cron_log (id, last_run) VALUES (1, NOW()) ON CONFLICT (id) DO UPDATE SET last_run = NOW()");
-    io.emit("reload");
     console.log("Tabella temp_movies aggiornata!");
 });
 
@@ -595,7 +583,6 @@ app.post("/new", async (req, res) => {
     } catch (err) {
         console.error("Error adding movie to database", err);
     }
-    io.emit("reload");
     res.redirect("/");
 });
 
@@ -680,7 +667,6 @@ app.post("/edit/:id", async (req, res) => {
             return res.redirect("/");
         }
     }
-    io.emit("reload");
     res.redirect(`/`);
 });
 
@@ -692,7 +678,6 @@ app.post("/movie/:id/delete", async (req, res) => {
             await db.query("DELETE FROM temp_movies WHERE id = $1", [id]);
             //console.log("Movie deleted from temp_movies");
             res.cookie("success", "Film eliminato con successo temporaneamente!", { maxAge: 5000, httpOnly: false });
-            io.emit("reload");
             res.redirect("/");
         } catch (error) {
             console.error("Errore:", error);
@@ -707,7 +692,6 @@ app.post("/movie/:id/delete", async (req, res) => {
             await db.query("DELETE FROM temp_movies WHERE id = $1", [id]);
             //console.log("Movie deleted from movies");
             res.cookie("success", "Film eliminato con successo permanentemente!", { maxAge: 5000, httpOnly: false });
-            io.emit("reload");
             res.redirect("/");
         } catch (error) {
             console.error("Errore:", error);
@@ -816,7 +800,6 @@ app.post("/updateTemp", async (req, res) => {
     // Log dell'aggiornamento
     //console.log("Tabella temp_movies aggiornata!");
     res.cookie("success", "Tabella temp_movies aggiornata con successo!", { maxAge: 5000, httpOnly: false });
-    io.emit("reload");
     res.redirect("/admin");
 });
 
@@ -1089,7 +1072,7 @@ app.post("/delete-account", async (req, res) => {
 });
 
 
-server.listen(port, () => {
+app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
 
