@@ -12,7 +12,6 @@ import connectLivereload from "connect-livereload";
 const app = express();
 const port = 3000;
 
-app.use(connectLivereload());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static("public"));
