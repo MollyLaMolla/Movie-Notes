@@ -3,7 +3,7 @@ const { Pool } = pg;
 import dotenv from "dotenv";
 dotenv.config();
 
-console.log("Password:", typeof process.env.DB_PASSWORD);
+// console.log("Password:", typeof process.env.DB_PASSWORD);
 
 // const db = new Pool({
 //     user: process.env.DB_USER,
