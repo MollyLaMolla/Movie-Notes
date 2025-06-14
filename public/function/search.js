@@ -167,7 +167,7 @@ function updatePageContent(movie) {
     language.textContent = movie.originnal_language;
     voteCount.textContent = `(${movie.vote_count})`;
     overview.textContent = movie.overview;
-    voteAvgNum.textContent = `${movie.vote_average.toFixed(1)}`;
+    voteAvgNum.textContent = `${Math.round(movie.vote_average * 2) / 2}`; // Arrotonda a 0.5
     createStars(movie.vote_average);
     formId.value = movie.id;
     formTitle.value = movie.title;
@@ -179,7 +179,7 @@ function updatePageContent(movie) {
     formGenre.value = movie.genre_names.join(", ");
     formReleaseDate.value = movie.release_date;
     formLanguage.value = movie.originnal_language;
-    formVoteAvg.value = movie.vote_average;
+    formVoteAvg.value = `${Math.round(movie.vote_average * 2) / 2}`; // Arrotonda a 0.5
     formVoteCount.value = movie.vote_count;
     formOverview.value = movie.overview;
 }

@@ -49,7 +49,6 @@
                     <span id="vote-avg-num"></span>
                     <span id="vote-avg">/10</span><br>
                     <span id="stars"><span id="full-stars"></span><span id="half-stars"></span><span id="empty-stars"></span><span id="vote-count"></span></span>
-                    
                 </h2>
             </div>
         </div>
@@ -94,11 +93,11 @@
             <h2>Your vote:</h2>
             <p id="personal-vote-text">Rate the movie from 0 to 10</p>
             <p id="personal-vote-text-3">You can use decimals (e.g. 7.5)</p>
-            <input type="number" id="personal-vote" name="personal-vote" min="0" max="10" step="0.1" required value="0" oninput="this.value = Math.min(Math.max(this.value, 0), 10);">
+            <input type="number" id="personal-vote" name="personal-vote" min="0" max="10" step="0.1" required value="0" oninput="this.value = Math.round(Math.min(Math.max(this.value, 0), 10) * 10) / 10;">
         </div>
         <div class="personal-overview-container">
             <h2>Your overview:</h2>
-            <textarea id="personal-overview" name="personal-overview" rows="8" cols="50"></textarea>
+             <textarea id="personal-overview" name="personal-overview" rows="4" cols="50" <% if (locals.user.role === 'user') { %>disabled style = "resize:none;" not-allowed <% } %>></textarea>
         </div>
     </div>
 
@@ -130,10 +129,14 @@
         </div>
     <% } %>
 
+    <%- include('partials/theme.ejs') %>
+
     <script src="/function/header_animation.js"></script>
     <script type="module" src="/function/search.js"></script>
     <script src="/function/newMovie.js"></script>
     <script src="/function/messages.js"></script>
+    <script src="/function/not_allowed_popup.js"></script>
+    <script src="/function/theme.js"></script>
     <%- include('partials/live.ejs') %>
 </body>
 </html>

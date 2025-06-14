@@ -53,6 +53,57 @@ app.use((req, res, next) => {
     next();
 });
 
+app.use(async (req, res, next) => {
+  try {
+    const cookieId = req.cookies.cookieId;
+
+    if (!cookieId) {
+      const result = await db.query(
+        'INSERT INTO anonymous_users DEFAULT VALUES RETURNING cookie_id'
+      );
+      const newId = result.rows[0].cookie_id;
+
+      res.cookie('cookieId', newId, {
+        httpOnly: true,
+        maxAge: 15 * 60 * 1000, // 15 minuti
+      });
+    } 
+    if (cookieId && !isNaN(cookieId)) {
+        const result = await db.query(
+        'SELECT cookie_id FROM anonymous_users WHERE cookie_id = $1',
+        [cookieId]
+        );
+        if (result.rows.length === 0) {
+            // Se il cookie non esiste, creane uno nuovo
+            const newResult = await db.query(
+                'INSERT INTO anonymous_users DEFAULT VALUES RETURNING cookie_id'
+            );
+            const newId = newResult.rows[0].cookie_id;
+
+            res.cookie('cookieId', newId, {
+                httpOnly: true,
+                maxAge: 15 * 60 * 1000, // 15 minuti
+            });
+        }
+    }
+    else if (cookieId && isNaN(cookieId)) {
+        const newResult = await db.query(
+            'INSERT INTO anonymous_users DEFAULT VALUES RETURNING cookie_id'
+        );
+        const newId = newResult.rows[0].cookie_id;
+        res.cookie('cookieId', newId, {
+            httpOnly: true,
+            maxAge: 15 * 60 * 1000, // 15 minuti
+        });
+    }
+  } catch (error) {
+    console.error("Errore durante la gestione dei cookie:", error);
+  }
+    next();
+});
+
+
+
 
 process.on("uncaughtException", (err) => {
     console.error("🚨 Errore critico:", err);
@@ -136,6 +187,11 @@ try {
                 movie_permanent
                 FROM movies`
             );
+            await resetTempUsersDeletions();
+            await db.query("DROP TABLE IF EXISTS anonymous_users");
+            await db.query(`CREATE TABLE anonymous_users (
+                            cookie_id SERIAL PRIMARY KEY)`
+            );
             await db.query("INSERT INTO cron_log (id, last_run) VALUES (1, NOW()) ON CONFLICT (id) DO UPDATE SET last_run = NOW()");
             console.log("Tabella temp_movies aggiornata!");
         } catch (error) {
@@ -212,6 +268,11 @@ cron.schedule("*/15 * * * *", async () => {
             movie_time_updated,
             movie_permanent
             FROM movies`
+        );
+        await resetTempUsersDeletions();
+        await db.query("DROP TABLE IF EXISTS anonymous_users");
+        await db.query(`CREATE TABLE anonymous_users (
+                            cookie_id SERIAL PRIMARY KEY)`
         );
         await db.query("INSERT INTO cron_log (id, last_run) VALUES (1, NOW()) ON CONFLICT (id) DO UPDATE SET last_run = NOW()");
         console.log("Tabella temp_movies aggiornata!");
@@ -644,8 +705,26 @@ app.post("/edit/:id", async (req, res) => {
 
 app.post("/movie/:id/delete", async (req, res) => {
     const { id } = req.params;
+    const userName = res.locals.user?.username || "user";
     if (res.locals.user?.role === "user") {
         try {
+            if (userName !== "user"){
+                const userId = await db.query("SELECT id FROM users WHERE username = $1", [userName]);
+                const reachedlimit = await addTempUsersDeletions(userId.rows[0].id);
+                if (reachedlimit) {
+                    res.cookie("error", "error: you have reached the delete limit, try again later!", { maxAge: 5000, httpOnly: false });
+                    return res.redirect("/");
+                }
+            }else {
+                const cookieId = req.cookies.cookieId;
+                if (cookieId) {
+                    const reachedlimit = await addTempUsersDeletions(cookieId * 1000000);// Moltiplica per 1000000 per evitare conflitti con gli ID degli utenti
+                    if (reachedlimit) {
+                        res.cookie("error", "error: you have reached the delete limit, try again later!", { maxAge: 5000, httpOnly: false });
+                        return res.redirect("/");
+                    }
+                }
+            }
             await db.query("DELETE FROM temp_movies WHERE id = $1", [id]);
             res.cookie("success", "Film eliminato con successo temporaneamente!", { maxAge: 5000, httpOnly: false });
             res.redirect("/");
@@ -761,6 +840,8 @@ app.post("/updateTemp", async (req, res) => {
         movie_permanent
     FROM movies`
     );
+    // Resetta le eliminazioni temporanee degli utenti
+    await resetTempUsersDeletions();
     await db.query("INSERT INTO cron_log (id, last_run) VALUES (1, NOW()) ON CONFLICT (id) DO UPDATE SET last_run = NOW()");
     // Log dell'aggiornamento
     res.cookie("success", "Tabella temp_movies aggiornata con successo!", { maxAge: 5000, httpOnly: false });
@@ -1014,6 +1095,32 @@ app.post("/delete-account", async (req, res) => {
     // reindirizzo alla home
     res.redirect("/");
 });
+
+async function addTempUsersDeletions(userId) {
+    const userDeletions = await db.query("SELECT user_deletions FROM users_deletions WHERE user_id = $1", [userId]);
+    if (userDeletions.rows.length === 0) {
+        await db.query("INSERT INTO users_deletions (user_id, user_deletions) VALUES ($1, $2)", [userId, 1]);
+        return false; // L'utente non ha ancora raggiunto il limite di eliminazioni
+    }
+    if (userDeletions.rows.length > 0 && userDeletions.rows[0].user_deletions <= 4) {
+        await db.query("UPDATE users_deletions SET user_deletions = user_deletions + 1 WHERE user_id = $1", [userId]);
+        return false; // L'utente non ha ancora raggiunto il limite di eliminazioni
+    }
+    else {
+        return true; // L'utente ha raggiunto il limite di eliminazioni
+    }
+}
+
+async function resetTempUsersDeletions() {
+    await db.query("DROP TABLE IF EXISTS users_deletions");
+    await db.query(`CREATE TABLE users_deletions (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL unique,
+                    user_deletions INTEGER DEFAULT 0);`
+    );
+}
+
+        
 
 
 app.listen(port, () => {

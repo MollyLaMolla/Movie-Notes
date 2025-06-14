@@ -201,11 +201,15 @@
         <div id="data-container" data-totalPages="<%= totalPages %>"></div>
         <div id="all-movies" data-movies="<%= JSON.stringify(allMovies) %>"></div>
     </div>
+
+    <%- include('partials/theme.ejs') %>
+
     <script src="/function/search_2.js"></script>
     <script src="/function/pagination.js"></script>
     <script src="/function/index.js"></script>
     <script src="/function/messages.js"></script>
     <script src="/function/header_animation.js"></script>
+    <script src="/function/theme.js"></script>
     <%- include('partials/live.ejs') %>
 </body>
 </html>

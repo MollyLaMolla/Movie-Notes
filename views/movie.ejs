@@ -71,14 +71,14 @@
         <div class="whatch-info">
             <div class="whatch-general-info">
                 <h2>My personal notes:</h2>
-                <p class="whatching-status-badge"><%= watching_status %></p>
                 <p class="whatching-status-time">Created: <span class="time-created"><%= formatDate(time_created) %></span></p>
                 <p class="whatching-status-time">Last Update: <span class="time-updated"><%= formatDate(time_updated) %></span></p>
+                <p class="whatching-status-badge <%= watching_status.toLowerCase().replace(/\s+/g, '-') %>"><%= watching_status %></p>
                 <% if (watching_status === 'Completed') { %>
                     <p>personal vote: <span class="personal-vote"><%= personal_vote %></span></p>
                 <% } %>
             </div>
-            <% if (watching_status === 'Completed') { %>
+            <% if (watching_status === 'Completed' && personal_overview !== '') { %>
             <div class="personal-overview-info">
                 <h2>My personal overview:</h2>
                 <div class="personal-overview-text-area">
@@ -87,14 +87,14 @@
             </div>
             <% } %>
         </div>
-
-
-        
     </div>
     </div>
+
+    <%- include('partials/theme.ejs') %>
 
     <script src="/function/header_animation.js"></script>
     <script src="/function/function.js"></script>
+    <script src="/function/theme.js"></script>
     <%- include('partials/live.ejs') %>
 </body>
 </html>
