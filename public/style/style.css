@@ -982,7 +982,6 @@ body{
     width: fit-content;
     padding: 20px;
     background-color: var(--background-color-2);
-    border: 1px solid var(--border-color);
     box-sizing: border-box;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.045);
@@ -1031,16 +1030,16 @@ body{
     height: calc(100% - 32px);
     width: calc(100% - 32px);
     gap: 8px;
-    background-color: var(--background-color-3);
+    background-color: var(--background-color-4);
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 10px var(--background-color-5);
     transition: transform 0.3s ease , box-shadow 0.3s ease;
 }
 
 .movie-card:hover{
     transform: scale(1.02);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 20px var(--background-color-5);
 }
 
 .movie-card img{
@@ -2349,7 +2348,7 @@ input#personal-vote:focus{
     max-width: 768px;
     padding: 16px;
     gap: 32px;
-    background-color: var(--background-color-2);
+    background-color: var(--background-color-3);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -2415,7 +2414,7 @@ input#personal-vote:focus{
     padding: 10px;
     font-size: 16px;
     border: 1px solid var(--border-color);
-    background-color: var(--background-color-3);
+    background-color: var(--background-color-4);
     border-radius: 4px;
     box-sizing: border-box;
     resize: none;
@@ -2566,11 +2565,18 @@ input#personal-vote:focus{
 
     .movies-container{
         width: calc(100% - 80px);
+        box-sizing: border-box;
     }
 
     .filter-reset{
-        width: calc(100% - 40px);
+        width: 100%;
+        box-sizing: border-box;
         text-align: center;
+    }
+
+    .filter-button-div button{
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .log{
@@ -2625,9 +2631,7 @@ input#personal-vote:focus{
     .movies-container {
         grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
         grid-template-rows: repeat(auto-fill, minmax(132px, 1fr));
-        width: 100%;
         box-sizing: border-box;
-        border-radius: 0;
         gap: 12px;
         padding: 12px;
     }
@@ -2637,9 +2641,6 @@ input#personal-vote:focus{
     #movie-data-header img{
         height: auto;
         width: 100%;
-    }
-    .movies-filter form {
-        width: calc(100% - 80px);
     }
 
     .actions-button{
@@ -2666,6 +2667,13 @@ input#personal-vote:focus{
     .movies-container {
         grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
         grid-template-rows: repeat(auto-fill, minmax(132px, 1fr));;
+        box-sizing: border-box;
+        width: calc(100% - 32px);
+    }
+
+    .filter-form{
+        width: calc(100% - 32px) !important;
+        padding: 12px !important;
     }
 
     .filter-second-row {
