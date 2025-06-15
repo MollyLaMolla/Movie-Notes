@@ -25,8 +25,12 @@ function setTheme(newTheme) {
     
     if (themeToggle) {
         themeToggle.addEventListener("click", function () {
+            document.body.classList.add('no-transition');
             const currentTheme = document.documentElement.getAttribute('data-theme');
             const newTheme = currentTheme === 'light' ? 'dark' : 'light';
             setTheme(newTheme);
+            setTimeout(() => {
+                document.body.classList.remove('no-transition');
+            }, 100); // Rimuove la classe dopo un breve ritardo per evitare il flicker
         });
     }
