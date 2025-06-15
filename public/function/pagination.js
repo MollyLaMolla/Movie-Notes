@@ -17,6 +17,7 @@ function generatePagination(currentPage, totalPages) {
     paginationContainer.innerHTML = ""; // Pulisce la paginazione esistente
 
     const maxPages = getMaxPages(); // Determina maxPages in base allo schermo
+    console.log(`Max pages: ${maxPages}, Current page: ${currentPage}, Total pages: ${totalPages}`);
 
     // Bottone "Previous"
     if (currentPage > 1) {
@@ -38,8 +39,9 @@ function generatePagination(currentPage, totalPages) {
 
     // Generazione dei numeri di pagina dinamici
     for (let i = currentPage - maxPages; i <= currentPage + maxPages && i <= totalPages; i++) {
-        if (i < 1) continue;
-
+        if (i < 1) continue; // Salta pagine non valide
+        if (i >= totalPages && i > currentPage) continue; // Salta pagine oltre il totale
+        console.log(`Adding page button for page: ${i}`);
         const pageElement = document.createElement("p");
         pageElement.className = `pagination-link page ${currentPage === i ? "active" : ""} ${i === 1 ? "first-page" : ""} ${i === totalPages ? "last-page" : ""}`;
         pageElement.textContent = i;
@@ -48,7 +50,7 @@ function generatePagination(currentPage, totalPages) {
     }
 
     // Bottone ultima pagina se necessario
-    if (currentPage + maxPages < totalPages) {
+    if (currentPage < totalPages) {
         const lastPage = document.createElement("p");
         lastPage.className = "pagination-link last-page";
         lastPage.textContent = totalPages;
