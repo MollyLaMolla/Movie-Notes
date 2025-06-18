@@ -37,6 +37,8 @@
         </div>
     <% } %>
 
+    <%- include('partials/theme.ejs') %>
+
     <script>
     function check(input) {
         if (input.id === "confirm-password") {
@@ -52,6 +54,7 @@
 
 <script src="/function/header_animation.js"></script>
 <script src="/function/messages.js"></script>
+<script src="/function/theme.js"></script>
 <%- include('partials/live.ejs') %>
 </body>
 </html>
